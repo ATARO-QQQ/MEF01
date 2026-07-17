@@ -1,1112 +1,971 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MULTI-FX PROCESSOR X-15 - Realistic Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        body {
-            background-color: #050505;
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.9) 70%),
-                repeating-linear-gradient(45deg, #0f0f0f 0px, #0f0f0f 20px, #0a0a0a 20px, #0a0a0a 40px);
-            user-select: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #ccc;
-            overflow: hidden; 
-        }
-        .cables-bg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0.6;
-        }
-        .chassis {
-            background-color: #1a1a1c;
-            background-image: 
-                repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.02) 1px, rgba(255,255,255,0.02) 2px),
-                linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.4) 100%);
-            box-shadow: 
-                0 30px 60px rgba(0,0,0,0.9),
-                0 10px 20px rgba(0,0,0,0.7),
-                inset 0 2px 3px rgba(255,255,255,0.2), 
-                inset 0 -10px 15px rgba(0,0,0,0.8);
-            border-bottom: 14px solid #080809;
-            border-top: 1px solid #444;
-            position: relative;
-        }
-        .chassis::before {
-            content: '';
-            position: absolute;
-            top: -1px; left: -1px; right: -1px; bottom: -1px;
-            border-radius: inherit;
-            background: 
-                radial-gradient(circle at 1% 1%, rgba(200,200,200,0.4) 0%, transparent 2%),
-                radial-gradient(circle at 99% 1%, rgba(200,200,200,0.3) 0%, transparent 3%),
-                radial-gradient(circle at 2% 98%, rgba(200,200,200,0.5) 0%, transparent 1.5%),
-                radial-gradient(circle at 98% 99%, rgba(200,200,200,0.4) 0%, transparent 2.5%),
-                repeating-linear-gradient(15deg, transparent, transparent 100px, rgba(255,255,255,0.01) 100px, rgba(255,255,255,0.01) 102px);
-            pointer-events: none;
-            z-index: 10;
-        }
-        .panel-print {
-            font-family: 'Share Tech Mono', monospace;
-        }
-        .vfd-screen {
-            font-family: 'VT323', monospace;
-            background-color: #030a0d;
-            background-image: 
-                linear-gradient(rgba(0, 0, 0, 0.5) 50%, transparent 50%),
-                linear-gradient(90deg, rgba(0, 0, 0, 0.2) 50%, transparent 50%);
-            background-size: 100% 4px, 4px 100%;
-            color: #33ffcc; 
-            box-shadow: 
-                inset 0 0 20px rgba(0,0,0,1), 
-                inset 0 0 5px rgba(51, 255, 204, 0.1),
-                0 0 15px rgba(51, 255, 204, 0.1);
-            text-shadow: 0 0 5px #33ffcc, 0 0 8px rgba(51, 255, 204, 0.8);
-            border: 2px solid #111;
-            border-top: 4px solid #0a0a0a;
-            position: relative;
-        }
-        .vfd-screen::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 40%);
-            pointer-events: none;
-        }
-        .knob-container {
-            width: 56px;
-            height: 56px;
-            position: relative;
-        }
-        .knob {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: 
-                repeating-conic-gradient(from 0deg, #111 0deg, #333 3deg, #111 6deg),
-                radial-gradient(circle, #444 30%, #111 70%);
-            background-blend-mode: multiply;
-            border: 1px solid #000;
-            box-shadow: 
-                0 8px 12px rgba(0,0,0,0.8), 
-                inset 0 2px 5px rgba(255,255,255,0.3),
-                inset 0 -2px 5px rgba(0,0,0,0.8);
-            cursor: ns-resize;
-            position: absolute;
-            transform-origin: center;
-            transform: rotate(-135deg); 
-        }
-        .knob::after {
-            content: '';
-            position: absolute;
-            top: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 16px;
-            background: #fff;
-            border-radius: 2px;
-            box-shadow: 0 0 4px rgba(255,255,255,0.8), inset 0 1px 2px rgba(0,0,0,0.5);
-        }
-        .footswitch-container {
-            transition: all 0.1s;
-            position: relative;
-        }
-        .footswitch {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 40% 30%, #eee, #999 40%, #444 80%, #222);
-            border: 1px solid #111;
-            box-shadow: 
-                0 8px 10px rgba(0,0,0,0.7),
-                0 2px 2px rgba(0,0,0,0.5),
-                inset 0 -3px 5px rgba(0,0,0,0.6),
-                inset 0 2px 4px rgba(255,255,255,0.9);
-            position: relative;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-        }
-        .footswitch:active {
-            box-shadow: 
-                0 2px 3px rgba(0,0,0,0.9),
-                inset 0 4px 8px rgba(0,0,0,0.8);
-            transform: translateY(6px);
-        }
-        .footswitch-nut {
-            position: absolute;
-            width: 58px;
-            height: 58px;
-            background: #444;
-            clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
-            z-index: 1;
-            top: -4px;
-            left: -4px;
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 5px 10px rgba(0,0,0,0.8);
-            background-image: repeating-radial-gradient(circle at center, transparent 0, transparent 2px, rgba(0,0,0,0.2) 3px, rgba(0,0,0,0.2) 4px);
-        }
-        .footswitch-container::before {
-            content: '';
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, transparent 60%);
-            top: 10px;
-            left: -15px;
-            pointer-events: none;
-            z-index: 0;
-            border-radius: 50%;
-        }
-        .led-bezel {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #222;
-            border: 2px solid #111;
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 2px 5px rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px auto;
-        }
-        .led {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #222;
-            box-shadow: inset 0 2px 3px rgba(0,0,0,0.8);
-        }
-        .led.active-red { background-color: #ff2a2a; box-shadow: 0 0 10px #ff2a2a, 0 0 20px #ff2a2a, inset 0 2px 4px rgba(255,255,255,0.8); }
-        .led.active-yellow { background-color: #ffcc00; box-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00, inset 0 2px 4px rgba(255,255,255,0.8); }
-        .led.active-blue { background-color: #2a8cff; box-shadow: 0 0 10px #2a8cff, 0 0 20px #2a8cff, inset 0 2px 4px rgba(255,255,255,0.8); }
-        .led.active-green { background-color: #2aff2a; box-shadow: 0 0 10px #2aff2a, 0 0 20px #2aff2a, inset 0 2px 4px rgba(255,255,255,0.8); }
-        .chaos-pad {
-            background: #020508;
-            border: 3px solid #111;
-            border-radius: 4px;
-            box-shadow: 
-                inset 0 0 30px rgba(0,0,0,1),
-                0 2px 5px rgba(255,255,255,0.1);
-            position: relative;
-            overflow: hidden;
-            cursor: crosshair;
-            background-image: 
-                linear-gradient(rgba(51, 255, 204, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(51, 255, 204, 0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .chaos-cursor {
-            width: 12px;
-            height: 12px;
-            background: #33ffcc;
-            border-radius: 50%;
-            position: absolute;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 15px #33ffcc, 0 0 30px #33ffcc;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.1s;
-        }
-        @keyframes flash-red {
-            0% { background-color: #7f1d1d; box-shadow: 0 0 0px red; }
-            50% { background-color: #dc2626; box-shadow: 0 0 15px red; }
-            100% { background-color: #7f1d1d; box-shadow: 0 0 0px red; }
-        }
-        .recording {
-            animation: flash-red 1s infinite;
-            border-color: #f87171 !important;
-            color: white !important;
-        }
-        ::-webkit-scrollbar { display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virtual Floor Multi-Effects</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-color: #1a1c1e;
+    --panel-color: #2a2c30;
+    --metal-dark: #1f2022;
+    --metal-light: #3a3c40;
+    --vfd-bg: #051010;
+    --vfd-text: #00ffcc;
+    --led-off: #300000;
+    --led-red: #ff1111;
+    --led-blue: #1177ff;
+    --led-green: #11ff11;
+    --led-orange: #ff8811;
+  }
+  * { box-sizing: border-box; user-select: none; }
+  body {
+    margin: 0; padding: 0;
+    background-color: #000;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .pedalboard {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, var(--metal-dark), #111 80%);
+    background-image: 
+      url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>'),
+      linear-gradient(135deg, var(--metal-dark), #111 80%);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+  }
+  .top-section {
+    flex: 0 0 100px;
+    background: linear-gradient(to bottom, #111, var(--metal-dark));
+    border-bottom: 2px solid #000;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px 30px;
+    justify-content: space-between;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+  .cables-svg {
+    position: absolute;
+    top: -50px; left: 0; width: 100%; height: 150px;
+    pointer-events: none;
+    z-index: 1;
+    filter: drop-shadow(0 10px 5px rgba(0,0,0,0.8));
+  }
+  .io-panel {
+    display: flex; gap: 30px; z-index: 2; align-items: flex-end;
+  }
+  .jack-group {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+  }
+  .jack-label { color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px; }
+  .jack {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ddd, #666);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    display: flex; justify-content: center; align-items: center;
+    border: 2px solid #222;
+  }
+  .jack-hole {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #000; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+  }
+  .transport-controls {
+    display: flex; gap: 15px; z-index: 2; align-items: center;
+  }
+  .file-upload-btn, .btn-transport {
+    background: linear-gradient(to bottom, #444, #222);
+    color: #ccc; border: 1px solid #111;
+    padding: 8px 15px; border-radius: 4px;
+    font-size: 12px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+    transition: all 0.1s;
+  }
+  .file-upload-btn:active, .btn-transport:active {
+    background: #222; box-shadow: inset 0 3px 5px rgba(0,0,0,0.8); transform: translateY(2px);
+  }
+  input[type="file"] { display: none; }
+  .display-section {
+    flex: 0 0 260px;
+    display: flex;
+    padding: 20px 40px;
+    gap: 40px;
+    background: linear-gradient(to bottom, #2a2c30, #1f2022);
+    border-bottom: 2px solid #111;
+  }
+  .vfd-container {
+    flex: 1;
+    background: #111;
+    border: 4px solid #000;
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.9), 0 2px 5px rgba(255,255,255,0.05);
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .vfd-glass {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.02) 100%);
+    pointer-events: none; border-radius: 6px; z-index: 5;
+  }
+  .vfd-screen {
+    flex: 1;
+    background-color: var(--vfd-bg);
+    background-image: radial-gradient(rgba(0, 255, 204, 0.1) 1px, transparent 1px);
+    background-size: 4px 4px;
+    border-radius: 5px;
+    padding: 15px;
+    color: var(--vfd-text);
+    font-family: 'Share Tech Mono', monospace;
+    text-shadow: 0 0 4px var(--vfd-text), 0 0 8px var(--vfd-text);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .vfd-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid rgba(0,255,204,0.3); padding-bottom: 5px;}
+  .vfd-params {
+    display: flex; gap: 15px; flex: 1;
+  }
+  .vfd-param-col {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px;
+  }
+  .vfd-val { font-size: 22px; }
+  .vfd-bar-container {
+    width: 20px; height: 60px; border: 1px solid rgba(0,255,204,0.4);
+    position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .vfd-bar-fill {
+    width: 100%; background: var(--vfd-text); box-shadow: 0 0 5px var(--vfd-text);
+    transition: height 0.1s;
+  }
+  .vfd-name { font-size: 12px; }
+  .knobs-container {
+    display: flex; gap: 20px; align-items: flex-end; padding-bottom: 10px;
+  }
+  .knob-unit {
+    display: flex; flex-direction: column; align-items: center; gap: 10px; width: 60px;
+  }
+  .knob-wrapper {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: #111;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.8);
+    position: relative;
+    cursor: ns-resize;
+  }
+  .knob {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: 
+      repeating-radial-gradient(circle at center, #333 0, #555 1px, #333 2px),
+      conic-gradient(from 0deg, #444, #888, #444, #888, #444);
+    background-blend-mode: multiply;
+    box-shadow: inset 0 0 3px rgba(255,255,255,0.3), inset 0 -2px 5px rgba(0,0,0,0.5);
+    position: absolute; top:0; left:0;
+    transform: rotate(-150deg);
+  }
+  .knob::after {
+    content: ''; position: absolute; top: 4px; left: 50%;
+    width: 4px; height: 12px; background: #000;
+    transform: translateX(-50%); border-radius: 2px;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
+  }
+  .knob-label { color: #888; font-size: 10px; font-weight: bold; }
+  .chaos-section {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .chaos-pad-container {
+    width: 180px; height: 160px;
+    background: #000; border: 3px solid #222; border-radius: 8px;
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.9);
+    cursor: crosshair;
+  }
+  .chaos-grid {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background-image: 
+      linear-gradient(rgba(255, 136, 17, 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 136, 17, 0.2) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+  }
+  .chaos-pointer {
+    width: 15px; height: 15px;
+    background: #ff8811; border-radius: 50%;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px #ff8811, 0 0 20px #ff8811;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .chaos-pad-container.active .chaos-pointer { opacity: 1; }
+  .chaos-label { color: #ff8811; font-family: 'Share Tech Mono', monospace; font-size: 12px; text-shadow: 0 0 5px #ff8811;}
+  .footswitches-section {
+    flex: 1;
+    padding: 30px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 20px 10px;
+  }
+  .fs-unit {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px;
+  }
+  .fs-led {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--led-off);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.1);
+    transition: all 0.1s;
+  }
+  .fs-unit.active .fs-led[data-color="red"] { background: var(--led-red); box-shadow: 0 0 10px var(--led-red), 0 0 20px var(--led-red), inset 0 0 2px #fff; }
+  .fs-unit.active .fs-led[data-color="blue"] { background: var(--led-blue); box-shadow: 0 0 10px var(--led-blue), 0 0 20px var(--led-blue), inset 0 0 2px #fff; }
+  .fs-unit.active .fs-led[data-color="green"] { background: var(--led-green); box-shadow: 0 0 10px var(--led-green), 0 0 20px var(--led-green), inset 0 0 2px #fff; }
+  .fs-unit.active .fs-led[data-color="orange"] { background: var(--led-orange); box-shadow: 0 0 10px var(--led-orange), 0 0 20px var(--led-orange), inset 0 0 2px #fff; }
+  .fs-label {
+    color: #aaa; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;
+    text-align: center; height: 26px; display: flex; align-items: center;
+    text-shadow: 0 1px 1px #000;
+  }
+  .fs-switch-wrapper {
+    width: 50px; height: 50px;
+    position: relative;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .fs-nut {
+    width: 44px; height: 44px;
+    background: conic-gradient(#777, #ccc, #777, #ccc, #777);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    position: absolute;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+  }
+  .fs-washer {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #555; position: absolute;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+  }
+  .fs-plunger {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #999);
+    position: absolute; z-index: 2;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.05s, box-shadow 0.05s;
+  }
+  .fs-plunger:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .fs-edit-btn {
+    background: transparent; color: #666; border: 1px solid #444;
+    font-size: 9px; padding: 2px 6px; border-radius: 3px; cursor: pointer;
+    margin-top: 5px;
+  }
+  .fs-edit-btn:hover { color: #ccc; border-color: #888; }
+  .fs-edit-btn.editing { background: #00ffcc; color: #000; border-color: #00ffcc; box-shadow: 0 0 5px #00ffcc;}
+</style>
 </head>
-<body class="min-h-screen flex items-center justify-center py-12 relative">
-    <svg class="cables-bg" xmlns="http://www.w3.org/2000/svg">
-        <path d="M -50 300 C 150 350, 50 600, 200 620" fill="none" stroke="#111" stroke-width="18" stroke-linecap="round" filter="drop-shadow(5px 10px 5px rgba(0,0,0,0.8))"/>
-        <path d="M -50 300 C 150 350, 50 600, 200 620" fill="none" stroke="#333" stroke-width="12" stroke-linecap="round"/>
-        <path d="M 900 620 C 1050 650, 1100 400, 1300 450" fill="none" stroke="#111" stroke-width="18" stroke-linecap="round" filter="drop-shadow(-5px 10px 5px rgba(0,0,0,0.8))"/>
-        <path d="M 900 620 C 1050 650, 1100 400, 1300 450" fill="none" stroke="#333" stroke-width="12" stroke-linecap="round"/>
-        <path d="M 700 250 C 750 100, 600 50, 700 -50" fill="none" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round" filter="drop-shadow(3px 8px 4px rgba(0,0,0,0.8))"/>
-    </svg>
-    <div class="chassis w-[1150px] p-10 rounded-[20px]">
-        <div class="flex justify-between items-end mb-10 border-b-2 border-zinc-800 pb-5 panel-print">
-            <div>
-                <h1 class="text-4xl font-black tracking-tighter text-zinc-300" style="text-shadow: -2px -2px 0px rgba(0,0,0,0.8), 2px 2px 2px rgba(255,255,255,0.1);">
-                    MULTI-FX <span class="text-red-700 font-serif italic pr-1">X-15</span>
-                </h1>
-                <p class="text-xs tracking-[0.3em] text-zinc-500 mt-2 font-bold">ADVANCED AMP & EFFECTS PROCESSOR</p>
-            </div>
-            <div class="flex items-center gap-4 bg-[#111] p-3 rounded-lg border border-[#222] shadow-[inset_0_2px_10px_rgba(0,0,0,1)]">
-                <input type="file" id="audio-file" accept="audio/*" class="text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-[#222] file:text-gray-300 hover:file:bg-[#333] cursor-pointer shadow-[0_2px_5px_rgba(0,0,0,0.5)]">
-                <button id="play-btn" class="bg-gradient-to-b from-green-700 to-green-900 hover:from-green-600 hover:to-green-800 text-white font-bold py-2 px-6 rounded shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.3)] active:shadow-[0_1px_2px_rgba(0,0,0,0.8)] active:translate-y-[2px] transition-all border border-green-950 font-mono">
-                    ▶ PLAY
-                </button>
-                <button id="rec-btn" class="bg-gradient-to-b from-zinc-700 to-zinc-900 hover:from-zinc-600 hover:to-zinc-800 text-red-500 font-bold py-2 px-5 rounded shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] active:shadow-[0_1px_2px_rgba(0,0,0,0.8)] active:translate-y-[2px] transition-all border border-zinc-950 font-mono flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_5px_red]"></span> REC / SAVE
-                </button>
-            </div>
-        </div>
-        <div class="flex gap-10 mb-14 bg-gradient-to-b from-[#151515] to-[#0a0a0a] p-6 rounded-xl border-t border-b border-[#222] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
-            <div class="flex-1 vfd-screen rounded-lg p-5 flex flex-col justify-between">
-                <div class="flex justify-between items-center border-b border-[#33ffcc]/30 pb-2 mb-2">
-                    <div class="text-3xl tracking-widest font-bold" id="lcd-title">SELECT EFFECT</div>
-                    <div class="text-lg px-2 border border-[#33ffcc]/50" id="lcd-status">BYPASS</div>
-                </div>
-                <div class="flex justify-around items-end h-28 mt-2" id="lcd-params">
-                    <div class="w-full text-center text-xl opacity-60 mt-10 tracking-widest animate-pulse">AWAITING INPUT...</div>
-                </div>
-            </div>
-            <div class="flex gap-8 items-center bg-[#111] p-5 rounded-lg border border-[#2a2a2a] shadow-[inset_0_5px_15px_rgba(0,0,0,1)] panel-print relative">
-                <div class="absolute top-2 left-4 right-4 h-[1px] bg-zinc-700"></div>
-                <div class="absolute bottom-2 left-4 right-4 h-[1px] bg-zinc-700"></div>
-                <div class="flex flex-col items-center z-10">
-                    <div class="knob-container">
-                        <div class="knob" data-param="0"></div>
-                    </div>
-                    <span class="text-[11px] mt-4 font-bold text-gray-400 tracking-widest" id="knob-lbl-0">P1</span>
-                </div>
-                <div class="flex flex-col items-center z-10">
-                    <div class="knob-container">
-                        <div class="knob" data-param="1"></div>
-                    </div>
-                    <span class="text-[11px] mt-4 font-bold text-gray-400 tracking-widest" id="knob-lbl-1">P2</span>
-                </div>
-                <div class="flex flex-col items-center z-10">
-                    <div class="knob-container">
-                        <div class="knob" data-param="2"></div>
-                    </div>
-                    <span class="text-[11px] mt-4 font-bold text-gray-400 tracking-widest" id="knob-lbl-2">P3</span>
-                </div>
-                <div class="flex flex-col items-center z-10">
-                    <div class="knob-container">
-                        <div class="knob" data-param="3"></div>
-                    </div>
-                    <span class="text-[11px] mt-4 font-bold text-gray-400 tracking-widest" id="knob-lbl-3">P4</span>
-                </div>
-            </div>
-            <div class="w-48 h-36 chaos-pad" id="chaos-pad">
-                <div class="chaos-cursor" id="chaos-cursor"></div>
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 text-sm font-mono text-[#33ffcc] tracking-widest">XY CONTROL</div>
-            </div>
-        </div>
-        <div class="grid grid-cols-5 gap-y-12 gap-x-8 px-6 panel-print" id="footswitches">
-        </div>
+<body>
+<div class="pedalboard">
+  <svg class="cables-svg" viewBox="0 0 1000 150" preserveAspectRatio="none">
+    <path d="M 100,-20 C 120,80 250,120 300,-20" stroke="#111" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <path d="M 105,-20 C 125,80 245,120 295,-20" stroke="#333" stroke-width="6" fill="none" />
+    <path d="M 400,-20 C 350,150 600,100 550,-20" stroke="#111" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M 405,-20 C 355,150 595,100 545,-20" stroke="#ff3333" stroke-width="8" fill="none" />
+    <path d="M 700,-20 C 800,90 950,50 900,-20" stroke="#111" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M 703,-20 C 800,90 947,50 897,-20" stroke="#33ccff" stroke-width="4" fill="none" />
+  </svg>
+  <div class="top-section">
+    <div class="io-panel">
+      <div class="jack-group">
+        <span class="jack-label">INPUT</span>
+        <div class="jack"><div class="jack-hole"></div></div>
+      </div>
     </div>
+    <div class="transport-controls">
+      <input type="file" id="audio-upload" accept="audio/*">
+      <button class="file-upload-btn" onclick="document.getElementById('audio-upload').click()">📁 LOAD AUDIO</button>
+      <button class="btn-transport" id="btn-play">▶ PLAY</button>
+      <button class="btn-transport" id="btn-stop">■ STOP</button>
+      <button class="btn-transport" id="btn-loop" style="color:#666">LOOP: OFF</button>
+    </div>
+    <div class="io-panel">
+      <div class="jack-group">
+        <span class="jack-label">L/MONO OUT</span>
+        <div class="jack"><div class="jack-hole"></div></div>
+      </div>
+      <div class="jack-group">
+        <span class="jack-label">R OUT</span>
+        <div class="jack"><div class="jack-hole"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="display-section">
+    <div class="vfd-container">
+      <div class="vfd-glass"></div>
+      <div class="vfd-screen" id="vfd-screen">
+        <div class="vfd-title" id="vfd-title">SYSTEM READY</div>
+        <div class="vfd-params" id="vfd-params">
+           <div style="font-size: 16px; margin-top:20px;">PLEASE LOAD AUDIO FILE.</div>
+        </div>
+      </div>
+    </div>
+    <div class="knobs-container" id="knobs-container">
+    </div>
+    <div class="chaos-section">
+      <div class="fs-unit" id="fs-chaos">
+        <div class="fs-led" data-color="orange" id="led-chaos"></div>
+        <div class="chaos-label">CHAOS PAD</div>
+      </div>
+      <div class="chaos-pad-container" id="chaos-pad">
+        <div class="chaos-grid"></div>
+        <div class="chaos-pointer" id="chaos-pointer"></div>
+      </div>
+      <button class="fs-edit-btn" id="edit-chaos" onclick="ui.selectEffect(18)">EDIT</button>
+    </div>
+  </div>
+  <div class="footswitches-section" id="fs-grid">
+  </div>
+</div>
 <script>
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx;
-let sourceNode;
-let audioBuffer;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let sourceNode = null;
+let audioBuffer = null;
 let isPlaying = false;
-let effects = [];
-let currentEditEffect = null;
-let mediaStreamDest;
-let mediaRecorder;
-let recordedChunks = [];
-let isRecording = false;
-const playBtn = document.getElementById('play-btn');
-const recBtn = document.getElementById('rec-btn');
-const fileInput = document.getElementById('audio-file');
-const lcdTitle = document.getElementById('lcd-title');
-const lcdStatus = document.getElementById('lcd-status');
-const lcdParams = document.getElementById('lcd-params');
-const knobs = document.querySelectorAll('.knob');
-const chaosPad = document.getElementById('chaos-pad');
-const chaosCursor = document.getElementById('chaos-cursor');
-const footswitchesContainer = document.getElementById('footswitches');
-function makeGateCurve(threshold) {
-    const n = 44100;
-    const curve = new Float32Array(n);
-    const th = threshold / 100 * 0.1; 
-    for (let i = 0; i < n; i++) {
-        let x = i * 2 / n - 1;
-        if (Math.abs(x) < th) {
-            curve[i] = x * Math.pow(Math.abs(x)/th, 2);
-        } else {
-            curve[i] = x;
-        }
+let isLooping = false;
+let globalInput = audioCtx.createGain();
+let globalOutput = audioCtx.createGain();
+globalOutput.connect(audioCtx.destination);
+function makeCurve(type) {
+  const n = 4096;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let x = (i * 2) / n - 1;
+    switch (type) {
+      case 'asym': 
+        curve[i] = x > 0 ? Math.tanh(x * 2.5) : Math.tanh(x * 1.5) * 0.5; break;
+      case 'soft': 
+        curve[i] = x / (1 + Math.abs(x)); break;
+      case 'hard': 
+        curve[i] = Math.max(-0.6, Math.min(0.6, x * 10)); break;
+      case 'cold': 
+        let y = Math.sin(x * Math.PI) * 1.5;
+        curve[i] = Math.max(-0.8, Math.min(0.8, y)); break;
+      case 'fuzz': 
+        curve[i] = x < 0 ? -1 : 1; break;
+      case 'rectify': 
+        curve[i] = Math.abs(x) * 2 - 1; break;
     }
-    return curve;
+  }
+  return curve;
 }
-function makeHardClipCurve(amount) {
-    const k = amount / 10;
-    const n = 44100;
-    const curve = new Float32Array(n);
-    for (let i = 0; i < n; ++i) {
-        let x = i * 2 / n - 1;
-        curve[i] = Math.max(-1, Math.min(1, x * (3 + k * 15))); 
-    }
-    return curve;
+const curves = {
+  od1: makeCurve('asym'), od2: makeCurve('soft'),
+  ds1: makeCurve('cold'), ds2: makeCurve('hard'),
+  fuzz: makeCurve('fuzz'), rectify: makeCurve('rectify')
+};
+class EffectBase {
+  constructor(name, type, color) {
+    this.name = name; this.type = type; this.color = color;
+    this.isOn = false;
+    this.input = audioCtx.createGain();
+    this.output = audioCtx.createGain();
+    this.dry = audioCtx.createGain();
+    this.wet = audioCtx.createGain();
+    this.input.connect(this.dry);
+    this.dry.connect(this.output);
+    this.wet.connect(this.output);
+    this.dry.gain.value = 1; this.wet.gain.value = 0;
+    this.params = []; this.nodes = {};
+  }
+  toggle() {
+    this.isOn = !this.isOn;
+    this.dry.gain.setTargetAtTime(this.isOn ? 0 : 1, audioCtx.currentTime, 0.01);
+    this.wet.gain.setTargetAtTime(this.isOn ? 1 : 0, audioCtx.currentTime, 0.01);
+  }
+  setParam(index, val) {
+    const p = this.params[index];
+    if(p) { p.val = val; p.onChange(val); }
+  }
+  connectEffect(firstNode, lastNode) {
+    this.input.connect(firstNode);
+    lastNode.connect(this.wet);
+  }
 }
-function makeAsymmetricCurve(amount) {
-    const k = amount / 10;
-    const n = 44100;
-    const curve = new Float32Array(n);
-    for (let i = 0; i < n; ++i) {
-        let x = i * 2 / n - 1;
-        if (x > 0) {
-            curve[i] = Math.tanh(x * (1 + k * 8));
-        } else {
-            curve[i] = Math.tanh(x * (1 + k * 3));
-        }
-    }
-    return curve;
-}
-function makeSoftClipCurve(amount) {
-    const k = amount / 10;
-    const n = 44100;
-    const curve = new Float32Array(n);
-    for (let i = 0; i < n; ++i) {
-        let x = i * 2 / n - 1;
-        curve[i] = Math.tanh(x * (1 + k * 5));
-    }
-    return curve;
-}
-function makeFuzzCurve(amount) {
-    const k = amount / 10;
-    const n = 44100;
-    const curve = new Float32Array(n);
-    for (let i = 0; i < n; ++i) {
-        let x = i * 2 / n - 1;
-        let val = x * (10 + k * 100);
-        curve[i] = Math.sign(val) * (1 - Math.exp(-Math.abs(val)));
-        if(curve[i] > 0.8) curve[i] = 0.8; 
-    }
-    return curve;
-}
-class EffectNode {
-    constructor(ctx, id, name, colorClass) {
-        this.ctx = ctx;
-        this.id = id;
-        this.name = name;
-        this.colorClass = colorClass;
-        this.input = ctx.createGain();
-        this.output = ctx.createGain();
-        this.dryGain = ctx.createGain();
-        this.wetGain = ctx.createGain();
-        this.effectInput = ctx.createGain();
-        this.effectOutput = ctx.createGain();
-        this.input.connect(this.dryGain);
-        this.dryGain.connect(this.output);
-        this.input.connect(this.effectInput);
-        this.effectOutput.connect(this.wetGain);
-        this.wetGain.connect(this.output);
-        this.bypass = true;
-        this.targetDry = 1.0;
-        this.targetWet = 1.0;
-        this.params = []; 
-        this.applyBypass();
-    }
-    setMix(dry, wet) {
-        this.targetDry = dry;
-        this.targetWet = wet;
-        this.applyBypass();
-    }
-    applyBypass() {
-        const t = this.ctx ? this.ctx.currentTime : 0;
-        if(this.bypass) {
-            this.dryGain.gain.setTargetAtTime(1.0, t, 0.01);
-            this.wetGain.gain.setTargetAtTime(0.0, t, 0.01);
-        } else {
-            this.dryGain.gain.setTargetAtTime(this.targetDry, t, 0.01);
-            this.wetGain.gain.setTargetAtTime(this.targetWet, t, 0.01);
-        }
-    }
-    toggle() {
-        this.bypass = !this.bypass;
-        this.applyBypass();
-        return this.bypass;
-    }
-    updateParam(index, ratio) {
-        if(index >= this.params.length) return;
-        const p = this.params[index];
-        p.val = p.min + ratio * (p.max - p.min);
-        this.onParamChange();
-    }
-    onParamChange() {}
-}
-class GateEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'gate', 'GATE', 'active-yellow');
-        this.shaper = ctx.createWaveShaper();
-        this.effectInput.connect(this.shaper);
-        this.shaper.connect(this.effectOutput);
-        this.params = [
-            { id: 'thresh', name: 'THRESH', min: 0, max: 100, val: 20 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.shaper.curve = makeGateCurve(this.params[0].val);
-        this.effectOutput.gain.value = this.params[1].val / 50;
-    }
-}
-class CompEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'comp', 'COMP', 'active-yellow');
-        this.comp = ctx.createDynamicsCompressor();
-        this.effectInput.connect(this.comp);
-        this.comp.connect(this.effectOutput);
-        this.params = [
-            { id: 'thresh', name: 'THRESH', min: -60, max: 0, val: -30 },
-            { id: 'ratio', name: 'RATIO', min: 1, max: 20, val: 4 },
-            { id: 'attack', name: 'ATTACK', min: 0.001, max: 0.5, val: 0.05 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.comp.threshold.value = this.params[0].val;
-        this.comp.ratio.value = this.params[1].val;
-        this.comp.attack.value = this.params[2].val;
-        this.effectOutput.gain.value = this.params[3].val / 50;
-    }
-}
-class AutoWahEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'aw', 'AUTO WAH', 'active-yellow');
-        this.filter = ctx.createBiquadFilter();
-        this.filter.type = 'bandpass';
-        this.lfo = ctx.createOscillator();
-        this.lfo.type = 'sine';
-        this.lfoGain = ctx.createGain();
-        this.lfo.connect(this.lfoGain);
-        this.lfoGain.connect(this.filter.frequency);
-        this.lfo.start();
-        this.effectInput.connect(this.filter);
-        this.filter.connect(this.effectOutput);
-        this.params = [
-            { id: 'rate', name: 'RATE', min: 0.1, max: 10, val: 3 },
-            { id: 'depth', name: 'DEPTH', min: 100, max: 3000, val: 1500 },
-            { id: 'reso', name: 'RESO', min: 1, max: 20, val: 10 },
-            { id: 'freq', name: 'BASE', min: 200, max: 2000, val: 800 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.lfo.frequency.value = this.params[0].val;
-        this.lfoGain.gain.value = this.params[1].val;
-        this.filter.Q.value = this.params[2].val;
-        this.filter.frequency.value = this.params[3].val;
-        this.setMix(0, 1.0);
-    }
-}
-class Od1Effect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'od1', 'OD-1(SD)', 'active-red');
-        this.preEq = ctx.createBiquadFilter();
-        this.preEq.type = 'highpass';
-        this.preEq.frequency.value = 300; 
-        this.shaper = ctx.createWaveShaper();
-        this.shaper.oversample = '4x';
-        this.tone = ctx.createBiquadFilter();
-        this.tone.type = 'lowpass';
-        this.effectInput.connect(this.preEq);
-        this.preEq.connect(this.shaper);
-        this.shaper.connect(this.tone);
-        this.tone.connect(this.effectOutput);
-        this.params = [
-            { id: 'drive', name: 'DRIVE', min: 0, max: 100, val: 50 },
-            { id: 'tone', name: 'TONE', min: 500, max: 5000, val: 2000 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.shaper.curve = makeAsymmetricCurve(this.params[0].val);
-        this.tone.frequency.value = this.params[1].val;
-        this.effectOutput.gain.value = this.params[2].val / 50 * 0.5; 
-        this.setMix(0, 1.0);
-    }
-}
-class Od2Effect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'od2', 'OD-2(BD)', 'active-red');
-        this.shaper = ctx.createWaveShaper();
-        this.shaper.oversample = '4x';
-        this.tone = ctx.createBiquadFilter();
-        this.tone.type = 'peaking';
-        this.tone.frequency.value = 2000;
-        this.effectInput.connect(this.shaper);
-        this.shaper.connect(this.tone);
-        this.tone.connect(this.effectOutput);
-        this.params = [
-            { id: 'drive', name: 'DRIVE', min: 0, max: 100, val: 40 },
-            { id: 'tone', name: 'TONE', min: -10, max: 10, val: 0 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.shaper.curve = makeSoftClipCurve(this.params[0].val);
-        this.tone.gain.value = this.params[1].val;
-        this.effectOutput.gain.value = this.params[2].val / 50 * 0.6;
-        this.setMix(0, 1.0);
-    }
-}
-class Ds1Effect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'ds1', 'DIST-1(XT)', 'active-red');
-        this.preEq = ctx.createBiquadFilter();
-        this.preEq.type = 'peaking';
-        this.preEq.frequency.value = 500;
-        this.preEq.Q.value = 1.0;
-        this.preEq.gain.value = -12; 
-        this.shaper = ctx.createWaveShaper();
-        this.shaper.oversample = '4x';
-        this.postLow = ctx.createBiquadFilter();
-        this.postLow.type = 'lowshelf';
-        this.postLow.frequency.value = 200;
-        this.postHigh = ctx.createBiquadFilter();
-        this.postHigh.type = 'highshelf';
-        this.postHigh.frequency.value = 4000;
-        this.effectInput.connect(this.preEq);
-        this.preEq.connect(this.shaper);
-        this.shaper.connect(this.postLow);
-        this.postLow.connect(this.postHigh);
-        this.postHigh.connect(this.effectOutput);
-        this.params = [
-            { id: 'drive', name: 'DRIVE', min: 0, max: 100, val: 80 },
-            { id: 'low', name: 'LOW', min: -12, max: 12, val: 6 },
-            { id: 'high', name: 'HIGH', min: -12, max: 12, val: 6 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.shaper.curve = makeHardClipCurve(this.params[0].val);
-        this.postLow.gain.value = this.params[1].val;
-        this.postHigh.gain.value = this.params[2].val;
-        this.effectOutput.gain.value = this.params[3].val / 50 * 0.3;
-        this.setMix(0, 1.0);
-    }
-}
-class Ds2Effect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'ds2', 'DIST-2(DS)', 'active-red');
-        this.shaper = ctx.createWaveShaper();
-        this.shaper.oversample = '4x';
-        this.tone = ctx.createBiquadFilter();
-        this.tone.type = 'peaking';
-        this.tone.frequency.value = 1000;
-        this.effectInput.connect(this.shaper);
-        this.shaper.connect(this.tone);
-        this.tone.connect(this.effectOutput);
-        this.params = [
-            { id: 'drive', name: 'DRIVE', min: 0, max: 100, val: 70 },
-            { id: 'tone', name: 'TONE', min: -15, max: 15, val: 0 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.shaper.curve = makeHardClipCurve(this.params[0].val * 0.8);
-        this.tone.gain.value = this.params[1].val;
-        this.effectOutput.gain.value = this.params[2].val / 50 * 0.4;
-        this.setMix(0, 1.0);
-    }
-}
-class FuzzEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'fuzz', 'FUZZ', 'active-red');
-        this.shaper = ctx.createWaveShaper();
-        this.shaper.oversample = '4x';
-        this.tone = ctx.createBiquadFilter();
-        this.tone.type = 'lowpass';
-        this.effectInput.connect(this.shaper);
-        this.shaper.connect(this.tone);
-        this.tone.connect(this.effectOutput);
-        this.params = [
-            { id: 'fuzz', name: 'FUZZ', min: 0, max: 100, val: 90 },
-            { id: 'tone', name: 'TONE', min: 500, max: 5000, val: 2500 },
-            { id: 'level', name: 'LEVEL', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.shaper.curve = makeFuzzCurve(this.params[0].val);
-        this.tone.frequency.value = this.params[1].val;
-        this.effectOutput.gain.value = this.params[2].val / 50 * 0.2;
-        this.setMix(0, 1.0);
-    }
-}
-class GeqEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'geq', 'GRAPHIC EQ', 'active-yellow');
-        this.filters = [];
-        const freqs = [100, 400, 1600, 6400];
-        let prev = this.effectInput;
-        for(let f of freqs) {
-            let filter = ctx.createBiquadFilter();
-            filter.type = 'peaking';
-            filter.frequency.value = f;
-            filter.Q.value = 1.4;
-            prev.connect(filter);
-            prev = filter;
-            this.filters.push(filter);
-        }
-        prev.connect(this.effectOutput);
-        this.params = [
-            { id: 'b1', name: '100Hz', min: -15, max: 15, val: 0 },
-            { id: 'b2', name: '400Hz', min: -15, max: 15, val: 0 },
-            { id: 'b3', name: '1.6kHz', min: -15, max: 15, val: 0 },
-            { id: 'b4', name: '6.4kHz', min: -15, max: 15, val: 0 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        for(let i=0; i<4; i++) {
-            this.filters[i].gain.value = this.params[i].val;
-        }
-    }
-}
-class ModEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'mod', 'PHASER', 'active-blue');
-        this.stages = [];
-        let prev = this.effectInput;
-        for(let i=0; i<4; i++) {
-            let f = ctx.createBiquadFilter();
-            f.type = 'allpass';
-            prev.connect(f);
-            prev = f;
-            this.stages.push(f);
-        }
-        prev.connect(this.effectOutput);
-        this.fbGain = ctx.createGain();
-        prev.connect(this.fbGain);
-        this.fbGain.connect(this.stages[0]);
-        this.lfo = ctx.createOscillator();
-        this.lfo.type = 'sine';
-        this.lfoGain = ctx.createGain();
-        this.lfo.connect(this.lfoGain);
-        for(let f of this.stages) {
-            this.lfoGain.connect(f.frequency);
-        }
-        this.lfo.start();
-        this.params = [
-            { id: 'rate', name: 'RATE', min: 0.1, max: 10, val: 1 },
-            { id: 'depth', name: 'DEPTH', min: 100, max: 2000, val: 1000 },
-            { id: 'reso', name: 'RESO', min: 0, max: 0.9, val: 0.5 },
-            { id: 'mix', name: 'MIX', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.lfo.frequency.value = this.params[0].val;
-        this.lfoGain.gain.value = this.params[1].val;
-        this.fbGain.gain.value = this.params[2].val;
-        for(let f of this.stages) f.frequency.value = 1000;
-        let mix = this.params[3].val / 100;
-        this.setMix(1.0 - mix*0.5, mix);
-    }
-}
-class ChorusEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'chorus', 'CHORUS', 'active-blue');
-        this.delay = ctx.createDelay();
-        this.delay.delayTime.value = 0.02;
-        this.lfo = ctx.createOscillator();
-        this.lfo.type = 'sine';
-        this.lfoGain = ctx.createGain();
-        this.lfo.connect(this.lfoGain);
-        this.lfoGain.connect(this.delay.delayTime);
-        this.lfo.start();
-        this.effectInput.connect(this.delay);
-        this.delay.connect(this.effectOutput);
-        this.params = [
-            { id: 'rate', name: 'RATE', min: 0.1, max: 8, val: 2 },
-            { id: 'depth', name: 'DEPTH', min: 0, max: 0.015, val: 0.005 },
-            { id: 'mix', name: 'MIX', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.lfo.frequency.value = this.params[0].val;
-        this.lfoGain.gain.value = this.params[1].val;
-        let mix = this.params[2].val / 100;
-        this.setMix(1.0 - mix*0.5, mix);
-    }
-}
-class FlangerEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'flanger', 'FLANGER', 'active-blue');
-        this.delay = ctx.createDelay();
-        this.delay.delayTime.value = 0.005;
-        this.fbGain = ctx.createGain();
-        this.delay.connect(this.fbGain);
-        this.fbGain.connect(this.delay);
-        this.lfo = ctx.createOscillator();
-        this.lfo.type = 'sine';
-        this.lfoGain = ctx.createGain();
-        this.lfo.connect(this.lfoGain);
-        this.lfoGain.connect(this.delay.delayTime);
-        this.lfo.start();
-        this.effectInput.connect(this.delay);
-        this.delay.connect(this.effectOutput);
-        this.params = [
-            { id: 'rate', name: 'RATE', min: 0.05, max: 5, val: 0.5 },
-            { id: 'depth', name: 'DEPTH', min: 0, max: 0.004, val: 0.002 },
-            { id: 'fb', name: 'FEEDBACK', min: 0, max: 0.9, val: 0.7 },
-            { id: 'mix', name: 'MIX', min: 0, max: 100, val: 50 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.lfo.frequency.value = this.params[0].val;
-        this.lfoGain.gain.value = this.params[1].val;
-        this.fbGain.gain.value = this.params[2].val;
-        let mix = this.params[3].val / 100;
-        this.setMix(1.0 - mix*0.5, mix);
-    }
-}
-class SlicerEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'slicer', 'SLICER', 'active-blue');
-        this.lfo = ctx.createOscillator();
-        this.lfo.type = 'square';
-        this.ampGain = ctx.createGain();
-        this.ampGain.gain.value = 0;
-        this.lfo.connect(this.ampGain.gain);
-        this.lfo.start();
-        this.effectInput.connect(this.ampGain);
-        this.ampGain.connect(this.effectOutput);
-        this.params = [
-            { id: 'rate', name: 'RATE', min: 1, max: 20, val: 8 },
-            { id: 'depth', name: 'DEPTH', min: 0, max: 1, val: 1 },
-            { id: 'mix', name: 'MIX', min: 0, max: 100, val: 100 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.lfo.frequency.value = this.params[0].val;
-        let mix = (this.params[2].val / 100) * this.params[1].val;
-        this.setMix(1.0 - mix, mix);
-    }
-}
-class DelayEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'delay', 'DELAY', 'active-green');
-        this.delay = ctx.createDelay(2.0);
-        this.fbGain = ctx.createGain();
-        this.filter = ctx.createBiquadFilter();
-        this.filter.type = 'lowpass';
-        this.effectInput.connect(this.delay);
-        this.delay.connect(this.filter);
-        this.filter.connect(this.fbGain);
-        this.fbGain.connect(this.delay);
-        this.delay.connect(this.effectOutput);
-        this.params = [
-            { id: 'time', name: 'TIME(ms)', min: 10, max: 1000, val: 300 },
-            { id: 'fb', name: 'FEEDBACK', min: 0, max: 0.95, val: 0.4 },
-            { id: 'tone', name: 'TONE', min: 500, max: 10000, val: 3000 },
-            { id: 'mix', name: 'MIX', min: 0, max: 100, val: 30 }
-        ];
-        this.onParamChange();
-    }
-    onParamChange() {
-        this.delay.delayTime.value = this.params[0].val / 1000;
-        this.fbGain.gain.value = this.params[1].val;
-        this.filter.frequency.value = this.params[2].val;
-        let mix = this.params[3].val / 100;
-        this.setMix(1.0, mix);
-    }
-}
-class ChaosEffect extends EffectNode {
-    constructor(ctx) {
-        super(ctx, 'chaos', 'CHAOS PAD', 'active-green');
-        this.delay = ctx.createDelay(1.0);
-        this.fbGain = ctx.createGain();
-        this.filter = ctx.createBiquadFilter();
-        this.filter.type = 'lowpass';
-        this.effectInput.connect(this.filter);
-        this.filter.connect(this.delay);
-        this.delay.connect(this.fbGain);
-        this.fbGain.connect(this.delay);
-        this.delay.connect(this.effectOutput);
-        this.params = []; 
-        this.setMix(1.0, 1.0);
-        this.filter.frequency.value = 5000;
-        this.delay.delayTime.value = 0.1;
-        this.fbGain.gain.value = 0.5;
-    }
-    updateXY(x, y) {
-        const t = this.ctx.currentTime;
-        this.delay.delayTime.setTargetAtTime(0.01 + x * 0.39, t, 0.05);
-        this.fbGain.gain.setTargetAtTime(y * 0.98, t, 0.05);
-        this.filter.frequency.setTargetAtTime(200 + y * 7800, t, 0.05);
-    }
-}
-function initAudio() {
-    if(audioCtx) return;
-    audioCtx = new AudioContext();
-    effects = [
-        new GateEffect(audioCtx),
-        new CompEffect(audioCtx),
-        new AutoWahEffect(audioCtx),
-        new GeqEffect(audioCtx),
-        new Od1Effect(audioCtx),
-        new Od2Effect(audioCtx),
-        new Ds1Effect(audioCtx),
-        new Ds2Effect(audioCtx),
-        new FuzzEffect(audioCtx),
-        new ModEffect(audioCtx),
-        new ChorusEffect(audioCtx),
-        new FlangerEffect(audioCtx),
-        new SlicerEffect(audioCtx),
-        new DelayEffect(audioCtx),
-        new ChaosEffect(audioCtx)
+class Compressor extends EffectBase {
+  constructor() {
+    super('COMPRESSOR', 'comp', 'blue');
+    this.comp = audioCtx.createDynamicsCompressor();
+    this.gain = audioCtx.createGain();
+    this.comp.connect(this.gain);
+    this.connectEffect(this.comp, this.gain);
+    this.params = [
+      { name: 'SUS', min: -50, max: -10, val: -30, disp: v=>v.toFixed(0), onChange: v => this.comp.threshold.value = v },
+      { name: 'ATK', min: 0.001, max: 0.1, val: 0.01, disp: v=>(v*1000).toFixed(0), onChange: v => this.comp.attack.value = v },
+      { name: 'LVL', min: 0, max: 2, val: 1, disp: v=>(v*50).toFixed(0), onChange: v => this.gain.gain.value = v }
     ];
-    for(let i=0; i<effects.length-1; i++) {
-        effects[i].output.connect(effects[i+1].input);
-    }
-    effects[effects.length-1].output.connect(audioCtx.destination);
-    mediaStreamDest = audioCtx.createMediaStreamDestination();
-    effects[effects.length-1].output.connect(mediaStreamDest);
-    buildFootSwitches();
-    selectEffect(effects[4]); 
+  }
 }
-function buildFootSwitches() {
-    footswitchesContainer.innerHTML = '';
-    effects.forEach((eff, idx) => {
-        const div = document.createElement('div');
-        div.className = 'flex flex-col items-center justify-center footswitch-container';
-        div.innerHTML = `
-            <div class="led-bezel">
-                <div class="led ${eff.bypass ? '' : eff.colorClass}" id="led-${idx}"></div>
-            </div>
-            <div class="footswitch" id="fs-${idx}">
-                <div class="footswitch-nut"></div>
-            </div>
-            <div class="mt-4 text-xs font-bold text-gray-400 tracking-wider cursor-pointer hover:text-white bg-[#111] px-2 py-1 rounded border border-[#333] shadow-inner" id="lbl-${idx}">${eff.name}</div>
-        `;
-        footswitchesContainer.appendChild(div);
-        document.getElementById(`fs-${idx}`).addEventListener('click', () => {
-            const isBypass = eff.toggle();
-            const led = document.getElementById(`led-${idx}`);
-            if(isBypass) {
-                led.classList.remove(eff.colorClass);
-            } else {
-                led.classList.add(eff.colorClass);
-            }
-            if(currentEditEffect === eff) updateLcdStatus();
-        });
-        document.getElementById(`lbl-${idx}`).addEventListener('click', () => {
-            selectEffect(eff);
-        });
+class AutoWah extends EffectBase {
+  constructor() {
+    super('AUTO WAH', 'filter', 'green');
+    this.filter = audioCtx.createBiquadFilter();
+    this.filter.type = 'bandpass';
+    this.follower = audioCtx.createScriptProcessor(512, 1, 1);
+    this.sens = 10000; this.baseFreq = 200;
+    this.input.connect(this.follower);
+    this.follower.connect(audioCtx.destination); 
+    this.follower.onaudioprocess = (e) => {
+      const inData = e.inputBuffer.getChannelData(0);
+      let sum = 0;
+      for(let i=0; i<inData.length; i++) sum += inData[i]*inData[i];
+      let rms = Math.sqrt(sum / inData.length);
+      let targetFreq = this.baseFreq + rms * this.sens;
+      targetFreq = Math.min(5000, Math.max(100, targetFreq));
+      this.filter.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.02);
+    };
+    this.connectEffect(this.filter, this.filter);
+    this.params = [
+      { name: 'SENS', min: 1000, max: 20000, val: 10000, disp: v=>(v/200).toFixed(0), onChange: v => this.sens = v },
+      { name: 'FREQ', min: 100, max: 1000, val: 200, disp: v=>v.toFixed(0), onChange: v => this.baseFreq = v },
+      { name: 'PEAK', min: 1, max: 20, val: 10, disp: v=>v.toFixed(1), onChange: v => this.filter.Q.value = v }
+    ];
+  }
+}
+class PitchShift extends EffectBase {
+  constructor() {
+    super('PITCH SHIFT', 'pitch', 'blue');
+    this.osc = audioCtx.createOscillator();
+    this.osc.type = 'sine';
+    this.osc.start();
+    this.gain = audioCtx.createGain();
+    this.gain.gain.value = 0; 
+    this.osc.connect(this.gain.gain);
+    this.modNode = audioCtx.createGain();
+    this.input.connect(this.modNode);
+    this.gain.connect(this.modNode.gain); 
+    this.connectEffect(this.modNode, this.modNode);
+    this.params = [
+      { name: 'PITCH', min: 10, max: 2000, val: 400, disp: v=>v.toFixed(0), onChange: v => this.osc.frequency.value = v },
+      { name: 'BAL', min: 0, max: 1, val: 0.5, disp: v=>(v*100).toFixed(0), onChange: v => { this.dry.gain.value = this.isOn ? 1-v : 1; this.wet.gain.value = this.isOn ? v : 0; } }
+    ];
+  }
+  toggle() {
+    super.toggle();
+    const bal = this.params[1].val;
+    this.dry.gain.value = this.isOn ? 1 - bal : 1;
+    this.wet.gain.value = this.isOn ? bal : 0;
+  }
+}
+class Octaver extends EffectBase {
+  constructor() {
+    super('OCTAVER', 'pitch', 'blue');
+    this.lp = audioCtx.createBiquadFilter();
+    this.lp.type = 'lowpass'; this.lp.frequency.value = 300;
+    this.processor = audioCtx.createScriptProcessor(512, 1, 1);
+    this.phase = 1; this.lastSample = 0;
+    this.processor.onaudioprocess = (e) => {
+      let inData = e.inputBuffer.getChannelData(0);
+      let outData = e.outputBuffer.getChannelData(0);
+      for (let i = 0; i < inData.length; i++) {
+        let s = inData[i];
+        if (this.lastSample > 0 && s <= 0) this.phase *= -1; 
+        outData[i] = this.phase * Math.abs(s);
+        this.lastSample = s;
+      }
+    };
+    this.outGain = audioCtx.createGain();
+    this.lp.connect(this.processor);
+    this.processor.connect(this.outGain);
+    this.input.connect(this.lp);
+    this.connectEffect(this.lp, this.outGain);
+    this.params = [
+      { name: 'OCT1', min: 0, max: 2, val: 1, disp: v=>(v*50).toFixed(0), onChange: v => this.outGain.gain.value = v },
+      { name: 'DRCT', min: 0, max: 1, val: 0.5, disp: v=>(v*100).toFixed(0), onChange: v => { this.dry.gain.value = this.isOn ? v : 1; } }
+    ];
+  }
+  toggle() {
+    super.toggle();
+    this.dry.gain.value = this.isOn ? this.params[1].val : 1;
+  }
+}
+class Fuzz extends EffectBase {
+  constructor() {
+    super('FUZZ', 'dist', 'red');
+    this.ws = audioCtx.createWaveShaper();
+    this.ws.curve = curves.fuzz;
+    this.preGain = audioCtx.createGain();
+    this.postGain = audioCtx.createGain();
+    this.tone = audioCtx.createBiquadFilter();
+    this.tone.type = 'lowpass';
+    this.preGain.connect(this.ws);
+    this.ws.connect(this.tone);
+    this.tone.connect(this.postGain);
+    this.connectEffect(this.preGain, this.postGain);
+    this.params = [
+      { name: 'FUZZ', min: 1, max: 100, val: 50, disp: v=>v.toFixed(0), onChange: v => this.preGain.gain.value = v },
+      { name: 'TONE', min: 200, max: 5000, val: 1500, disp: v=>(v/50).toFixed(0), onChange: v => this.tone.frequency.value = v },
+      { name: 'LVL', min: 0, max: 1, val: 0.3, disp: v=>(v*100).toFixed(0), onChange: v => this.postGain.gain.value = v }
+    ];
+  }
+}
+class NoiseGate extends EffectBase {
+  constructor() {
+    super('NOISE GATE', 'gate', 'green');
+    this.comp = audioCtx.createDynamicsCompressor();
+    this.comp.threshold.value = -40;
+    this.comp.ratio.value = 20;
+    this.comp.attack.value = 0.005;
+    this.comp.release.value = 0.1;
+    this.connectEffect(this.comp, this.comp);
+    this.params = [
+      { name: 'THR', min: -80, max: -20, val: -40, disp: v=>v.toFixed(0), onChange: v => this.comp.threshold.value = v },
+      { name: 'REL', min: 0.01, max: 0.5, val: 0.1, disp: v=>(v*1000).toFixed(0), onChange: v => this.comp.release.value = v }
+    ];
+  }
+}
+class Overdrive1 extends EffectBase {
+  constructor() {
+    super('OVERDRIVE 1', 'dist', 'orange');
+    this.preEq = audioCtx.createBiquadFilter(); this.preEq.type = 'peaking'; this.preEq.frequency.value = 800; this.preEq.gain.value = 5;
+    this.preGain = audioCtx.createGain();
+    this.ws = audioCtx.createWaveShaper(); this.ws.curve = curves.od1;
+    this.tone = audioCtx.createBiquadFilter(); this.tone.type = 'lowpass';
+    this.postGain = audioCtx.createGain();
+    this.preEq.connect(this.preGain); this.preGain.connect(this.ws);
+    this.ws.connect(this.tone); this.tone.connect(this.postGain);
+    this.connectEffect(this.preEq, this.postGain);
+    this.params = [
+      { name: 'DRV', min: 1, max: 20, val: 10, disp: v=>(v*5).toFixed(0), onChange: v => this.preGain.gain.value = v },
+      { name: 'TONE', min: 1000, max: 6000, val: 3000, disp: v=>(v/60).toFixed(0), onChange: v => this.tone.frequency.value = v },
+      { name: 'LVL', min: 0, max: 1, val: 0.5, disp: v=>(v*100).toFixed(0), onChange: v => this.postGain.gain.value = v }
+    ];
+  }
+}
+class Overdrive2 extends EffectBase {
+  constructor() {
+    super('OVERDRIVE 2', 'dist', 'blue');
+    this.preGain = audioCtx.createGain();
+    this.ws = audioCtx.createWaveShaper(); this.ws.curve = curves.od2;
+    this.tone = audioCtx.createBiquadFilter(); this.tone.type = 'lowpass';
+    this.postGain = audioCtx.createGain();
+    this.preGain.connect(this.ws); this.ws.connect(this.tone); this.tone.connect(this.postGain);
+    this.connectEffect(this.preGain, this.postGain);
+    this.params = [
+      { name: 'DRV', min: 1, max: 30, val: 15, disp: v=>(v*3.3).toFixed(0), onChange: v => this.preGain.gain.value = v },
+      { name: 'TONE', min: 2000, max: 8000, val: 4000, disp: v=>(v/80).toFixed(0), onChange: v => this.tone.frequency.value = v },
+      { name: 'LVL', min: 0, max: 1, val: 0.6, disp: v=>(v*100).toFixed(0), onChange: v => this.postGain.gain.value = v }
+    ];
+  }
+}
+class Distortion1 extends EffectBase {
+  constructor() {
+    super('DISTORTION 1', 'dist', 'red');
+    this.hp = audioCtx.createBiquadFilter(); this.hp.type = 'highpass'; this.hp.frequency.value = 600;
+    this.preGain = audioCtx.createGain();
+    this.ws = audioCtx.createWaveShaper(); this.ws.curve = curves.ds1;
+    this.contour = audioCtx.createBiquadFilter(); this.contour.type = 'peaking'; this.contour.frequency.value = 1000; this.contour.gain.value = -10;
+    this.postGain = audioCtx.createGain();
+    this.hp.connect(this.preGain); this.preGain.connect(this.ws);
+    this.ws.connect(this.contour); this.contour.connect(this.postGain);
+    this.connectEffect(this.hp, this.postGain);
+    this.params = [
+      { name: 'DRV', min: 5, max: 50, val: 30, disp: v=>(v*2).toFixed(0), onChange: v => this.preGain.gain.value = v },
+      { name: 'PNCH', min: 100, max: 500, val: 300, disp: v=>v.toFixed(0), onChange: v => this.hp.frequency.value = 700 - v },
+      { name: 'CNTR', min: -20, max: 0, val: -10, disp: v=>(20+v)*5, onChange: v => this.contour.gain.value = v },
+      { name: 'LVL', min: 0, max: 1, val: 0.4, disp: v=>(v*100).toFixed(0), onChange: v => this.postGain.gain.value = v }
+    ];
+  }
+}
+class Distortion2 extends EffectBase {
+  constructor() {
+    super('DISTORTION 2', 'dist', 'orange');
+    this.preGain = audioCtx.createGain();
+    this.ws = audioCtx.createWaveShaper(); this.ws.curve = curves.ds2;
+    this.tone = audioCtx.createBiquadFilter(); this.tone.type = 'peaking'; this.tone.frequency.value = 2000; this.tone.gain.value = 5;
+    this.postGain = audioCtx.createGain();
+    this.preGain.connect(this.ws); this.ws.connect(this.tone); this.tone.connect(this.postGain);
+    this.connectEffect(this.preGain, this.postGain);
+    this.params = [
+      { name: 'DRV', min: 2, max: 40, val: 20, disp: v=>(v*2.5).toFixed(0), onChange: v => this.preGain.gain.value = v },
+      { name: 'TONE', min: -10, max: 10, val: 5, disp: v=>(v*5+50).toFixed(0), onChange: v => this.tone.gain.value = v },
+      { name: 'LVL', min: 0, max: 1, val: 0.5, disp: v=>(v*100).toFixed(0), onChange: v => this.postGain.gain.value = v }
+    ];
+  }
+}
+class Booster extends EffectBase {
+  constructor() {
+    super('BOOSTER', 'eq', 'red');
+    this.gain = audioCtx.createGain();
+    this.eq = audioCtx.createBiquadFilter(); this.eq.type='peaking'; this.eq.frequency.value=1000;
+    this.gain.connect(this.eq);
+    this.connectEffect(this.gain, this.eq);
+    this.params = [
+      { name: 'GAIN', min: 1, max: 10, val: 2, disp: v=>(v*10).toFixed(0), onChange: v => this.gain.gain.value = v },
+      { name: 'TONE', min: -10, max: 10, val: 0, disp: v=>(v*5+50).toFixed(0), onChange: v => this.eq.gain.value = v }
+    ];
+  }
+}
+class GraphicEQ extends EffectBase {
+  constructor() {
+    super('GRAPHIC EQ', 'eq', 'green');
+    this.bands = [100, 400, 1000, 3000, 8000].map(f => {
+      let b = audioCtx.createBiquadFilter(); b.type = 'peaking'; b.frequency.value = f; return b;
     });
+    for(let i=0; i<4; i++) this.bands[i].connect(this.bands[i+1]);
+    this.connectEffect(this.bands[0], this.bands[4]);
+    this.params = this.bands.map((b, i) => ({
+      name: b.frequency.value < 1000 ? b.frequency.value : (b.frequency.value/1000)+'k',
+      min: -15, max: 15, val: 0, disp: v => v>0 ? '+'+v.toFixed(0) : v.toFixed(0),
+      onChange: v => b.gain.value = v
+    }));
+  }
 }
-function selectEffect(eff) {
-    currentEditEffect = eff;
-    lcdTitle.textContent = eff.name;
-    updateLcdStatus();
-    renderLcdParams();
+class Modulation extends EffectBase {
+  constructor() {
+    super('MODULATION', 'mod', 'blue');
+    this.ap1 = audioCtx.createBiquadFilter(); this.ap1.type = 'allpass';
+    this.ap2 = audioCtx.createBiquadFilter(); this.ap2.type = 'allpass';
+    this.lfo = audioCtx.createOscillator(); this.lfoGain = audioCtx.createGain();
+    this.fb = audioCtx.createGain(); this.fb.gain.value = 0.5;
+    this.ap1.connect(this.ap2); this.ap2.connect(this.fb); this.fb.connect(this.ap1);
+    this.lfo.connect(this.lfoGain);
+    this.lfoGain.connect(this.ap1.frequency); this.lfoGain.connect(this.ap2.frequency);
+    this.lfo.start();
+    this.connectEffect(this.ap1, this.ap2);
+    this.params = [
+      { name: 'RATE', min: 0.1, max: 10, val: 1, disp: v=>v.toFixed(1), onChange: v => this.lfo.frequency.value = v },
+      { name: 'DPTH', min: 100, max: 2000, val: 1000, disp: v=>(v/20).toFixed(0), onChange: v => this.lfoGain.gain.value = v },
+      { name: 'RES', min: 0, max: 0.9, val: 0.5, disp: v=>(v*100).toFixed(0), onChange: v => this.fb.gain.value = v }
+    ];
+  }
 }
-function updateLcdStatus() {
-    if(!currentEditEffect) return;
-    if(currentEditEffect.bypass) {
-        lcdStatus.textContent = 'BYPASS';
-        lcdStatus.style.borderColor = 'rgba(51,255,204,0.3)';
-        lcdStatus.style.color = 'rgba(51,255,204,0.5)';
-        lcdStatus.style.textShadow = 'none';
-        lcdStatus.style.boxShadow = 'none';
-    } else {
-        lcdStatus.textContent = 'ACTIVE';
-        lcdStatus.style.borderColor = '#33ffcc';
-        lcdStatus.style.color = '#fff';
-        lcdStatus.style.textShadow = '0 0 5px #33ffcc';
-        lcdStatus.style.boxShadow = 'inset 0 0 10px rgba(51,255,204,0.5)';
+class Flanger extends EffectBase {
+  constructor() {
+    super('FLANGER', 'mod', 'green');
+    this.delay = audioCtx.createDelay(0.02);
+    this.lfo = audioCtx.createOscillator(); this.lfoGain = audioCtx.createGain();
+    this.fb = audioCtx.createGain();
+    this.lfo.connect(this.lfoGain); this.lfoGain.connect(this.delay.delayTime);
+    this.delay.connect(this.fb); this.fb.connect(this.delay);
+    this.lfo.start();
+    this.connectEffect(this.delay, this.delay);
+    this.params = [
+      { name: 'RATE', min: 0.1, max: 5, val: 0.5, disp: v=>v.toFixed(1), onChange: v => this.lfo.frequency.value = v },
+      { name: 'DPTH', min: 0.001, max: 0.01, val: 0.005, disp: v=>(v*10000).toFixed(0), onChange: v => this.lfoGain.gain.value = v },
+      { name: 'MANU', min: 0.001, max: 0.01, val: 0.003, disp: v=>(v*10000).toFixed(0), onChange: v => this.delay.delayTime.value = v },
+      { name: 'RES', min: 0, max: 0.9, val: 0.7, disp: v=>(v*100).toFixed(0), onChange: v => this.fb.gain.value = v }
+    ];
+  }
+}
+class Chorus extends EffectBase {
+  constructor() {
+    super('CHORUS', 'mod', 'blue');
+    this.delay = audioCtx.createDelay(0.05); this.delay.delayTime.value = 0.02;
+    this.lfo = audioCtx.createOscillator(); this.lfoGain = audioCtx.createGain();
+    this.lfo.connect(this.lfoGain); this.lfoGain.connect(this.delay.delayTime);
+    this.lfo.start();
+    this.connectEffect(this.delay, this.delay);
+    this.params = [
+      { name: 'RATE', min: 0.1, max: 5, val: 1, disp: v=>v.toFixed(1), onChange: v => this.lfo.frequency.value = v },
+      { name: 'DPTH', min: 0.001, max: 0.01, val: 0.005, disp: v=>(v*10000).toFixed(0), onChange: v => this.lfoGain.gain.value = v },
+      { name: 'MIX', min: 0, max: 1, val: 0.5, disp: v=>(v*100).toFixed(0), onChange: v => { this.wet.gain.value = this.isOn?v:0; } }
+    ];
+  }
+  toggle() {
+    super.toggle();
+    this.wet.gain.value = this.isOn ? this.params[2].val : 0;
+  }
+}
+class Tremolo extends EffectBase {
+  constructor() {
+    super('TREMOLO', 'mod', 'green');
+    this.gain = audioCtx.createGain();
+    this.lfo = audioCtx.createOscillator(); this.lfoGain = audioCtx.createGain();
+    this.lfo.connect(this.lfoGain);
+    this.lfoGain.connect(this.gain.gain);
+    this.lfo.start();
+    this.connectEffect(this.gain, this.gain);
+    this.params = [
+      { name: 'RATE', min: 1, max: 15, val: 5, disp: v=>v.toFixed(1), onChange: v => this.lfo.frequency.value = v },
+      { name: 'DPTH', min: 0, max: 1, val: 0.8, disp: v=>(v*100).toFixed(0), onChange: v => this.lfoGain.gain.value = v }
+    ];
+    this.gain.gain.value = 1; 
+  }
+}
+class Slicer extends EffectBase {
+  constructor() {
+    super('SLICER', 'mod', 'orange');
+    this.gain = audioCtx.createGain();
+    this.lfo = audioCtx.createOscillator(); this.lfo.type = 'square';
+    this.lfoGain = audioCtx.createGain();
+    this.lfo.connect(this.lfoGain);
+    this.lfoGain.connect(this.gain.gain);
+    this.lfo.start();
+    this.connectEffect(this.gain, this.gain);
+    this.params = [
+      { name: 'RATE', min: 2, max: 20, val: 8, disp: v=>v.toFixed(1), onChange: v => this.lfo.frequency.value = v },
+      { name: 'DPTH', min: 0, max: 1, val: 1, disp: v=>(v*100).toFixed(0), onChange: v => this.lfoGain.gain.value = v }
+    ];
+    this.gain.gain.value = 0.5;
+  }
+}
+class Delay extends EffectBase {
+  constructor() {
+    super('DELAY', 'delay', 'blue');
+    this.delay = audioCtx.createDelay(2.0);
+    this.fb = audioCtx.createGain();
+    this.lp = audioCtx.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.frequency.value = 3000;
+    this.delay.connect(this.fb); this.fb.connect(this.lp); this.lp.connect(this.delay);
+    this.connectEffect(this.delay, this.delay);
+    this.params = [
+      { name: 'TIME', min: 0.05, max: 1.5, val: 0.4, disp: v=>(v*1000).toFixed(0), onChange: v => this.delay.delayTime.value = v },
+      { name: 'FDBK', min: 0, max: 0.95, val: 0.4, disp: v=>(v*100).toFixed(0), onChange: v => this.fb.gain.value = v },
+      { name: 'HI-C', min: 500, max: 5000, val: 3000, disp: v=>(v/50).toFixed(0), onChange: v => this.lp.frequency.value = v },
+      { name: 'MIX', min: 0, max: 1, val: 0.3, disp: v=>(v*100).toFixed(0), onChange: v => { this.wet.gain.value = this.isOn?v:0; } }
+    ];
+  }
+  toggle() {
+    super.toggle();
+    this.wet.gain.value = this.isOn ? this.params[3].val : 0;
+  }
+}
+class ChaosPad extends EffectBase {
+  constructor() {
+    super('CHAOS PAD', 'special', 'orange');
+    this.filter = audioCtx.createBiquadFilter(); this.filter.type = 'lowpass';
+    this.delay = audioCtx.createDelay(1.0); this.delay.delayTime.value = 0.2;
+    this.fb = audioCtx.createGain(); this.fb.gain.value = 0.5;
+    this.filter.connect(this.delay);
+    this.delay.connect(this.fb); this.fb.connect(this.delay);
+    this.delay.connect(this.wet);
+    this.input.connect(this.filter); 
+    this.dry.gain.value = 1; this.wet.gain.value = 0;
+    this.x = 0.5; this.y = 0.5;
+  }
+  setXY(x, y) {
+    this.x = x; this.y = y;
+    if(this.isOn) {
+      this.filter.frequency.setTargetAtTime(100 + x * 4900, audioCtx.currentTime, 0.05);
+      this.filter.Q.value = 10 + x * 10;
+      this.delay.delayTime.setTargetAtTime(0.02 + y * 0.48, audioCtx.currentTime, 0.05);
+      this.fb.gain.setTargetAtTime(y * 0.95, audioCtx.currentTime, 0.05);
     }
+  }
+  toggle() {
+    super.toggle();
+    this.wet.gain.setTargetAtTime(this.isOn ? 1 : 0, audioCtx.currentTime, 0.05);
+  }
 }
-function renderLcdParams() {
-    lcdParams.innerHTML = '';
-    if(!currentEditEffect || currentEditEffect.params.length === 0) {
-        lcdParams.innerHTML = '<div class="w-full text-center text-xl opacity-60 mb-8 tracking-widest">USE XY PAD FOR CONTROL</div>';
-        knobs.forEach((k, i) => {
-            k.style.transform = `rotate(-135deg)`;
-            document.getElementById(`knob-lbl-${i}`).textContent = '--';
-        });
-        return;
+const effectsList = [
+  new Compressor(), new AutoWah(), new PitchShift(), new Octaver(), new Fuzz(), new NoiseGate(),
+  new Overdrive1(), new Overdrive2(), new Distortion1(), new Distortion2(), new Booster(), new GraphicEQ(),
+  new Modulation(), new Flanger(), new Chorus(), new Tremolo(), new Slicer(), new Delay(),
+  new ChaosPad()
+];
+let prevNode = globalInput;
+effectsList.forEach(eff => {
+  prevNode.connect(eff.input);
+  prevNode = eff.output;
+});
+prevNode.connect(globalOutput);
+const ui = {
+  currentEditIdx: -1,
+  init() {
+    this.buildGrid();
+    this.selectEffect(8); 
+    this.initChaosPad();
+  },
+  buildGrid() {
+    const grid = document.getElementById('fs-grid');
+    for(let i=0; i<18; i++) {
+      const eff = effectsList[i];
+      const div = document.createElement('div');
+      div.className = 'fs-unit';
+      div.innerHTML = `
+        <div class="fs-led" data-color="${eff.color}" id="led-${i}"></div>
+        <div class="fs-label">${eff.name}</div>
+        <div class="fs-switch-wrapper" onmousedown="ui.toggleEffect(${i})">
+          <div class="fs-nut"></div>
+          <div class="fs-washer"></div>
+          <div class="fs-plunger"></div>
+        </div>
+        <button class="fs-edit-btn" id="edit-btn-${i}" onclick="ui.selectEffect(${i})">EDIT</button>
+      `;
+      grid.appendChild(div);
     }
-    currentEditEffect.params.forEach((p, i) => {
-        if(i >= 4) return;
-        const ratio = (p.val - p.min) / (p.max - p.min);
-        const percent = Math.round(ratio * 100);
-        const displayVal = p.max > 100 ? Math.round(p.val) : p.val.toFixed(1);
-        const col = document.createElement('div');
-        col.className = 'flex flex-col flex-1 mx-2 items-center';
-        col.innerHTML = `
-            <span class="text-sm text-[#33ffcc] mb-1 font-bold opacity-80">${p.name}</span>
-            <div class="h-16 w-full bg-[#000] border border-[#33ffcc]/30 flex flex-col justify-end p-[2px] relative overflow-hidden">
-                <!-- VFD風のセグメントバー -->
-                <div class="absolute inset-0 flex flex-col justify-between p-[2px] z-10 pointer-events-none opacity-30">
-                    ${Array(8).fill('<div class="h-[1px] w-full bg-[#000]"></div>').join('')}
-                </div>
-                <div class="w-full transition-all bg-[#33ffcc] shadow-[0_0_10px_#33ffcc]" style="height: ${percent}%;"></div>
-            </div>
-            <span class="text-lg mt-1 font-bold">${displayVal}</span>
-        `;
-        lcdParams.appendChild(col);
-        const angle = -135 + ratio * 270;
-        knobs[i].style.transform = `rotate(${angle}deg)`;
-        document.getElementById(`knob-lbl-${i}`).textContent = p.name;
+    document.getElementById('fs-chaos').querySelector('.fs-led').onclick = 
+    document.getElementById('fs-chaos').querySelector('.chaos-label').onclick = 
+    document.getElementById('led-chaos').parentElement.onclick = (e) => {
+      if(e.target.tagName !== 'BUTTON') ui.toggleEffect(18);
+    };
+  },
+  toggleEffect(idx) {
+    const eff = effectsList[idx];
+    eff.toggle();
+    const led = idx === 18 ? document.getElementById('fs-chaos') : document.getElementById(`led-${idx}`).parentElement;
+    if(eff.isOn) led.classList.add('active');
+    else led.classList.remove('active');
+  },
+  selectEffect(idx) {
+    if(this.currentEditIdx !== -1) {
+      const oldBtn = this.currentEditIdx === 18 ? document.getElementById('edit-chaos') : document.getElementById(`edit-btn-${this.currentEditIdx}`);
+      if(oldBtn) oldBtn.classList.remove('editing');
+    }
+    this.currentEditIdx = idx;
+    const newBtn = idx === 18 ? document.getElementById('edit-chaos') : document.getElementById(`edit-btn-${idx}`);
+    if(newBtn) newBtn.classList.add('editing');
+    this.updateVFD();
+  },
+  updateVFD() {
+    const eff = effectsList[this.currentEditIdx];
+    document.getElementById('vfd-title').innerText = eff.name + (eff.isOn ? ' [ON]' : ' [OFF]');
+    const paramsDiv = document.getElementById('vfd-params');
+    const knobsDiv = document.getElementById('knobs-container');
+    paramsDiv.innerHTML = '';
+    knobsDiv.innerHTML = '';
+    if (eff.name === 'CHAOS PAD') {
+      paramsDiv.innerHTML = '<div style="font-size:14px; margin-top:20px;">USE TOUCH PAD TO CONTROL<br>X: FILTER FREQ<br>Y: DELAY FDBK</div>';
+      return;
+    }
+    eff.params.forEach((p, i) => {
+      const pCol = document.createElement('div');
+      pCol.className = 'vfd-param-col';
+      const pct = ((p.val - p.min) / (p.max - p.min)) * 100;
+      pCol.innerHTML = `
+        <div class="vfd-val" id="vfd-val-${i}">${p.disp(p.val)}</div>
+        <div class="vfd-bar-container"><div class="vfd-bar-fill" id="vfd-bar-${i}" style="height:${pct}%"></div></div>
+        <div class="vfd-name">${p.name}</div>
+      `;
+      paramsDiv.appendChild(pCol);
+      const kUnit = document.createElement('div');
+      kUnit.className = 'knob-unit';
+      kUnit.innerHTML = `
+        <div class="knob-wrapper" data-idx="${i}" data-min="${p.min}" data-max="${p.max}">
+          <div class="knob" id="knob-${i}" style="transform:rotate(${-150 + pct*3}deg)"></div>
+        </div>
+        <div class="knob-label">${p.name}</div>
+      `;
+      knobsDiv.appendChild(kUnit);
     });
-    for(let i = currentEditEffect.params.length; i < 4; i++) {
-        knobs[i].style.transform = `rotate(-135deg)`;
-        document.getElementById(`knob-lbl-${i}`).textContent = '--';
-    }
-}
-let activeKnob = null;
-let startY = 0;
-let startRatio = 0;
-knobs.forEach(knob => {
-    knob.addEventListener('mousedown', (e) => {
-        if(!currentEditEffect || currentEditEffect.params.length === 0) return;
-        const paramIdx = parseInt(knob.dataset.param);
-        if(paramIdx >= currentEditEffect.params.length) return;
-        activeKnob = { el: knob, idx: paramIdx };
+    this.bindKnobs();
+  },
+  bindKnobs() {
+    let activeKnob = null;
+    let startY = 0;
+    let startVal = 0; 
+    const wrappers = document.querySelectorAll('.knob-wrapper');
+    wrappers.forEach(w => {
+      w.onmousedown = (e) => {
+        activeKnob = w;
         startY = e.clientY;
-        const p = currentEditEffect.params[paramIdx];
-        startRatio = (p.val - p.min) / (p.max - p.min);
-        document.body.style.cursor = 'ns-resize';
+        const pIdx = w.dataset.idx;
+        const p = effectsList[this.currentEditIdx].params[pIdx];
+        startVal = (p.val - p.min) / (p.max - p.min);
+        document.onmousemove = onMove;
+        document.onmouseup = onUp;
+      };
     });
-});
-window.addEventListener('mousemove', (e) => {
-    if(!activeKnob) return;
-    const deltaY = startY - e.clientY;
-    let newRatio = startRatio + (deltaY / 150);
-    newRatio = Math.max(0, Math.min(1, newRatio));
-    currentEditEffect.updateParam(activeKnob.idx, newRatio);
-    renderLcdParams();
-});
-window.addEventListener('mouseup', () => {
-    activeKnob = null;
-    document.body.style.cursor = 'default';
-});
-let isPadActive = false;
-chaosPad.addEventListener('mousedown', (e) => {
-    isPadActive = true;
-    chaosCursor.style.opacity = 1;
-    handlePadMove(e);
-});
-window.addEventListener('mousemove', (e) => {
-    if(isPadActive) handlePadMove(e);
-});
-window.addEventListener('mouseup', () => {
-    isPadActive = false;
-    chaosCursor.style.opacity = 0;
-});
-function handlePadMove(e) {
-    const rect = chaosPad.getBoundingClientRect();
-    let x = e.clientX - rect.left;
-    let y = e.clientY - rect.top;
-    x = Math.max(0, Math.min(rect.width, x));
-    y = Math.max(0, Math.min(rect.height, y));
-    chaosCursor.style.left = x + 'px';
-    chaosCursor.style.top = y + 'px';
-    let normX = x / rect.width;
-    let normY = 1.0 - (y / rect.height);
-    const chaos = effects.find(e => e.id === 'chaos');
-    if(chaos && !chaos.bypass) {
-        chaos.updateXY(normX, normY);
+    const onMove = (e) => {
+      if(!activeKnob) return;
+      const dy = startY - e.clientY;
+      let val = startVal + dy * 0.005; 
+      val = Math.max(0, Math.min(1, val));
+      const pIdx = activeKnob.dataset.idx;
+      const eff = effectsList[this.currentEditIdx];
+      const p = eff.params[pIdx];
+      const realVal = p.min + val * (p.max - p.min);
+      eff.setParam(pIdx, realVal);
+      document.getElementById(`knob-${pIdx}`).style.transform = `rotate(${-150 + val*300}deg)`;
+      document.getElementById(`vfd-val-${pIdx}`).innerText = p.disp(realVal);
+      document.getElementById(`vfd-bar-${pIdx}`).style.height = `${val*100}%`;
+    };
+    const onUp = () => {
+      activeKnob = null;
+      document.onmousemove = null;
+      document.onmouseup = null;
+    };
+  },
+  initChaosPad() {
+    const pad = document.getElementById('chaos-pad');
+    const ptr = document.getElementById('chaos-pointer');
+    let isDragging = false;
+    const update = (e) => {
+      const rect = pad.getBoundingClientRect();
+      let x = (e.clientX - rect.left) / rect.width;
+      let y = 1.0 - (e.clientY - rect.top) / rect.height;
+      x = Math.max(0, Math.min(1, x));
+      y = Math.max(0, Math.min(1, y));
+      ptr.style.left = `${x*100}%`;
+      ptr.style.top = `${(1-y)*100}%`;
+      effectsList[18].setXY(x, y); 
+    };
+    pad.onmousedown = (e) => { isDragging = true; pad.classList.add('active'); update(e); };
+    document.addEventListener('mousemove', (e) => { if(isDragging) update(e); });
+    document.addEventListener('mouseup', () => { isDragging = false; pad.classList.remove('active'); });
+  }
+};
+document.getElementById('audio-upload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      if(audioCtx.state === 'suspended') await audioCtx.resume();
+      audioBuffer = await audioCtx.decodeAudioData(ev.target.result);
+      document.getElementById('vfd-title').innerText = "AUDIO LOADED";
+      setTimeout(()=>ui.updateVFD(), 1000);
+    } catch(err) {
+      alert("Error decoding audio file.");
     }
+  };
+  reader.readAsArrayBuffer(file);
+});
+function stopAudio() {
+  if(sourceNode) {
+    try { sourceNode.stop(); } catch(e){}
+    sourceNode.disconnect();
+    sourceNode = null;
+  }
+  isPlaying = false;
+  document.getElementById('btn-play').innerText = "▶ PLAY";
 }
-fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if(!audioCtx) initAudio();
-    if(audioCtx.state === 'suspended') await audioCtx.resume();
-    const arrayBuffer = await file.arrayBuffer();
-    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    playBtn.textContent = '▶ PLAY';
-    playBtn.classList.remove('from-red-700', 'to-red-900', 'border-red-950');
-    playBtn.classList.add('from-green-700', 'to-green-900', 'border-green-950');
-    isPlaying = false;
+document.getElementById('btn-play').addEventListener('click', async () => {
+  if(audioCtx.state === 'suspended') await audioCtx.resume();
+  if(!audioBuffer) return;
+  if(isPlaying) {
+    stopAudio();
+    return;
+  }
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = audioBuffer;
+  sourceNode.loop = isLooping;
+  sourceNode.connect(globalInput);
+  sourceNode.start(0);
+  isPlaying = true;
+  document.getElementById('btn-play').innerText = "⏸ PAUSE";
+  sourceNode.onended = () => { if(!isLooping) stopAudio(); };
 });
-playBtn.addEventListener('click', async () => {
-    if(!audioBuffer) {
-        alert("音源ファイルを選択してください。");
-        return;
-    }
-    if(!audioCtx) initAudio();
-    if(audioCtx.state === 'suspended') await audioCtx.resume();
-    if(isPlaying) {
-        if(sourceNode) {
-            sourceNode.stop();
-            sourceNode.disconnect();
-        }
-        isPlaying = false;
-        playBtn.innerHTML = '▶ PLAY';
-        playBtn.classList.remove('from-red-700', 'to-red-900', 'border-red-950');
-        playBtn.classList.add('from-green-700', 'to-green-900', 'border-green-950');
-    } else {
-        sourceNode = audioCtx.createBufferSource();
-        sourceNode.buffer = audioBuffer;
-        sourceNode.loop = true;
-        sourceNode.connect(effects[0].input);
-        sourceNode.start();
-        isPlaying = true;
-        playBtn.innerHTML = '■ STOP';
-        playBtn.classList.remove('from-green-700', 'to-green-900', 'border-green-950');
-        playBtn.classList.add('from-red-700', 'to-red-900', 'border-red-950');
-    }
+document.getElementById('btn-stop').addEventListener('click', stopAudio);
+document.getElementById('btn-loop').addEventListener('click', (e) => {
+  isLooping = !isLooping;
+  e.target.innerText = isLooping ? "LOOP: ON" : "LOOP: OFF";
+  e.target.style.color = isLooping ? "#fff" : "#666";
+  if(sourceNode) sourceNode.loop = isLooping;
 });
-recBtn.addEventListener('click', async () => {
-    if(!audioCtx) {
-        alert("先に音源ファイルを選択してください。");
-        return;
-    }
-    if(isRecording) {
-        mediaRecorder.stop();
-        recBtn.innerHTML = '<span class="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_5px_red]"></span> REC / SAVE';
-        recBtn.classList.remove('recording');
-        isRecording = false;
-    } else {
-        recordedChunks = [];
-        const types = ['audio/webm', 'audio/ogg', 'audio/mp4'];
-        let mimeType = '';
-        for (let t of types) {
-            if (MediaRecorder.isTypeSupported(t)) {
-                mimeType = t;
-                break;
-            }
-        }
-        mediaRecorder = new MediaRecorder(mediaStreamDest.stream, { mimeType: mimeType });
-        mediaRecorder.ondataavailable = e => {
-            if (e.data.size > 0) recordedChunks.push(e.data);
-        };
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'mp4' : 'webm';
-            a.download = `FX_Processed_Audio.${ext}`;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-        };
-        mediaRecorder.start();
-        recBtn.innerHTML = '■ STOP & SAVE';
-        recBtn.classList.add('recording');
-        isRecording = true;
-    }
-});
+window.onload = () => {
+  ui.init();
+  effectsList.forEach(eff => {
+    eff.params.forEach((p, i) => eff.setParam(i, p.val));
+  });
+};
 </script>
 </body>
 </html>
