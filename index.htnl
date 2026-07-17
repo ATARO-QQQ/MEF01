@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ラックマウント・マルチエフェクター</title>
+<style>
+    :root {
+        --rack-bg: #121212;
+        --panel-bg: linear-gradient(180deg, #3a3c40 0%, #2a2c30 100%);
+        --panel-border: #1a1a1a;
+        --led-off: #421111;
+        --led-on: #ff3333;
+        --knob-base: radial-gradient(circle at 30% 30%, #666, #222);
+        --text-color: #e0e0e0;
+        --accent-color: #ff9900;
+    }
+    body, html {
+        margin: 0;
+        padding: 0;
+        background-color: #0a0a0a;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        color: var(--text-color);
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        overflow-x: hidden;
+    }
+    .rack-cabinet {
+        width: 100%;
+        max-width: 1000px;
+        background-color: var(--rack-bg);
+        border: 15px solid #050505;
+        border-radius: 4px;
+        box-shadow: inset 0 0 20px rgba(0,0,0,1), 0 10px 30px rgba(0,0,0,0.8);
+        position: relative;
+        padding: 0 30px;
+        margin-top: 20px;
+        margin-bottom: 40px;
+    }
+    .rack-cabinet::before, .rack-cabinet::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 25px;
+        background: linear-gradient(90deg, #333 0%, #555 50%, #222 100%);
+        border-left: 2px solid #111;
+        border-right: 2px solid #111;
+        z-index: 10;
+        background-image: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 20px,
+            #111 20px,
+            #111 25px
+        );
+    }
+    .rack-cabinet::before { left: 0; }
+    .rack-cabinet::after { right: 0; }
+    .rack-unit {
+        width: 100%;
+        background: var(--panel-bg);
+        border-top: 1px solid #4a4c50;
+        border-bottom: 2px solid var(--panel-border);
+        box-shadow: inset 0 2px 5px rgba(255,255,255,0.1), 0 5px 10px rgba(0,0,0,0.5);
+        margin: 2px 0;
+        position: relative;
+        z-index: 5;
+        box-sizing: border-box;
+    }
+    .screw {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: radial-gradient(circle, #888, #333);
+        border-radius: 50%;
+        box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 1px 3px rgba(0,0,0,0.8);
+        z-index: 20;
+    }
+    .screw::after {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 8px; height: 2px;
+        background-color: #111;
+        transform: translate(-50%, -50%) rotate(45deg);
+    }
+    .rack-unit .screw:nth-child(1) { top: 10px; left: -20px; }
+    .rack-unit .screw:nth-child(2) { top: 10px; right: -20px; }
+    .rack-unit .screw:nth-child(3) { bottom: 10px; left: -20px; }
+    .rack-unit .screw:nth-child(4) { bottom: 10px; right: -20px; }
+    .dummy-unit {
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        opacity: 0.7;
+    }
+    .dummy-unit.amp {
+        height: 120px;
+        background: repeating-linear-gradient(180deg, #111, #111 4px, #222 4px, #222 8px);
+    }
+    .dummy-grill {
+        width: 30%; height: 80px;
+        background: radial-gradient(circle, #000 30%, transparent 31%);
+        background-size: 10px 10px;
+        background-color: #222;
+        border: 2px solid #111;
+        border-radius: 4px;
+    }
+    .brand-logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #555;
+        text-shadow: -1px -1px 0 #000, 1px 1px 0 #777;
+        letter-spacing: 2px;
+    }
+    .mfx-unit {
+        height: auto;
+        min-height: 500px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .mfx-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 2px solid #222;
+        padding-bottom: 15px;
+        margin-bottom: 10px;
+    }
+    .mfx-title {
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: var(--accent-color);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        margin: 0;
+    }
+    .mfx-subtitle {
+        font-size: 0.8rem;
+        color: #aaa;
+        letter-spacing: 5px;
+    }
+    .transport-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        background: #222;
+        padding: 10px 20px;
+        border-radius: 8px;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.1);
+    }
+    .file-input-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+    }
+    .btn {
+        background: linear-gradient(180deg, #555, #333);
+        border: 1px solid #111;
+        color: white;
+        padding: 8px 15px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
+        transition: all 0.1s;
+        text-transform: uppercase;
+    }
+    .btn:active {
+        background: #333;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+        transform: translateY(1px);
+    }
+    .btn.play { color: #5f5; }
+    .btn.stop { color: #f55; }
+    .file-input-wrapper input[type=file] {
+        font-size: 100px;
+        position: absolute;
+        left: 0; top: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .mfx-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+    .mfx-grid.bottom {
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 15px;
+    }
+    .fx-block {
+        background: linear-gradient(145deg, #2c2e33, #24262a);
+        border: 1px solid #1a1a1a;
+        border-radius: 6px;
+        padding: 12px;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.6);
+        display: flex;
+        flex-direction: column;
+    }
+    .fx-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+    }
+    .fx-title {
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: #ccc;
+        letter-spacing: 1px;
+    }
+    .fx-controls {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 10px;
+        flex-grow: 1;
+        align-items: center;
+    }
+    .knob-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+    .knob-label {
+        font-size: 0.7rem;
+        color: #aaa;
+        text-transform: uppercase;
+    }
+    .knob-base {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: var(--knob-base);
+        border: 2px solid #111;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.8), inset 0 2px 3px rgba(255,255,255,0.2);
+        position: relative;
+        cursor: ns-resize;
+    }
+    .knob-dial {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        border-radius: 50%;
+        transition: transform 0s;
+    }
+    .knob-indicator {
+        position: absolute;
+        top: 4px; left: 50%;
+        width: 3px; height: 12px;
+        background-color: #fff;
+        transform: translateX(-50%);
+        border-radius: 2px;
+        box-shadow: 0 0 2px rgba(255,255,255,0.5);
+    }
+    .knob-val-display {
+        font-size: 0.6rem;
+        background: #111;
+        color: #0f0;
+        padding: 2px 4px;
+        border-radius: 2px;
+        font-family: monospace;
+        margin-top: 2px;
+        min-width: 30px;
+        text-align: center;
+        border: 1px solid #333;
+    }
+    .switch-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .led {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background-color: var(--led-off);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+        border: 1px solid #111;
+    }
+    .led.active {
+        background-color: var(--led-on);
+        box-shadow: 0 0 8px var(--led-on), inset 0 1px 2px rgba(255,255,255,0.5);
+    }
+    .toggle-switch {
+        position: relative;
+        width: 24px; height: 40px;
+        background: #111;
+        border-radius: 3px;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+        cursor: pointer;
+    }
+    .toggle-switch input { display: none; }
+    .toggle-handle {
+        position: absolute;
+        top: 2px; left: 2px;
+        width: 20px; height: 16px;
+        background: linear-gradient(180deg, #ccc, #777);
+        border-radius: 2px;
+        box-shadow: 0 2px 3px rgba(0,0,0,0.5);
+        transition: transform 0.1s;
+    }
+    .toggle-switch input:checked + .toggle-handle {
+        transform: translateY(20px);
+        background: linear-gradient(180deg, #999, #eee);
+    }
+    .geq-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: stretch;
+        height: 120px;
+        width: 100%;
+        padding: 10px 0;
+    }
+    .slider-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        height: 100%;
+    }
+    .slider-track {
+        height: 80px;
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    input[type=range].vertical-slider {
+        appearance: none;
+        width: 80px; 
+        height: 4px;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 2px;
+        outline: none;
+        transform: rotate(-90deg);
+        transform-origin: center;
+        margin: 0;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.9);
+    }
+    input[type=range].vertical-slider::-webkit-slider-thumb {
+        appearance: none;
+        width: 18px; height: 10px;
+        background: linear-gradient(90deg, #777, #ccc, #777);
+        border: 1px solid #111;
+        border-radius: 2px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    }
+    .slider-label {
+        font-size: 0.65rem;
+        color: #888;
+        margin-top: 5px;
+    }
+    #status-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        display: none;
+    }
+    .spinner {
+        border: 4px solid #333;
+        border-top: 4px solid var(--accent-color);
+        border-radius: 50%;
+        width: 40px; height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .span-2 { grid-column: span 2; }
+</style>
+</head>
+<body>
+<div id="status-overlay">
+    <div class="spinner"></div>
+    <div id="status-text">音源を読み込み中...</div>
+</div>
+<div class="rack-cabinet">
+    <div class="rack-unit dummy-unit">
+        <div class="screw"></div><div class="screw"></div><div class="screw"></div><div class="screw"></div>
+        <div class="brand-logo">STUDIO MIX 4000</div>
+        <div style="display:flex; gap:10px;">
+            <div style="width:5px;height:40px;background:#333;border-radius:3px;box-shadow:inset 0 0 2px #000;">
+                <div style="width:100%;height:10px;background:#1a1;margin-top:20px;"></div>
+            </div>
+            <div style="width:5px;height:40px;background:#333;border-radius:3px;box-shadow:inset 0 0 2px #000;">
+                <div style="width:100%;height:15px;background:#1a1;margin-top:15px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="rack-unit mfx-unit">
+        <div class="screw"></div><div class="screw"></div><div class="screw"></div><div class="screw"></div>
+        <div class="mfx-header">
+            <div>
+                <h1 class="mfx-title">RACK-FX PRO</h1>
+                <div class="mfx-subtitle">11-ALGORITHM DIGITAL MULTI PROCESSOR</div>
+            </div>
+            <div class="transport-controls">
+                <div class="file-input-wrapper">
+                    <button class="btn">FILE LOAD</button>
+                    <input type="file" id="audio-file" accept="audio/*">
+                </div>
+                <div style="font-size:0.8rem; color:#888; max-width: 150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="file-name">No file</div>
+                <button class="btn play" id="play-btn">▶ PLAY</button>
+                <button class="btn stop" id="stop-btn">■ STOP</button>
+            </div>
+        </div>
+        <div class="mfx-grid">
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title">NOISE GATE</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-gate"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-gate">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-gate-thresh" data-min="-80" data-max="0" data-val="-60">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-gate-thresh">-60</div>
+                        <div class="knob-label">Thresh</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-gate-decay" data-min="0.01" data-max="1" data-val="0.1">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-gate-decay">0.10</div>
+                        <div class="knob-label">Decay</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title">AUTO WAH</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-wah"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-wah">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-wah-rate" data-min="0.1" data-max="10" data-val="2">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-wah-rate">2.0</div>
+                        <div class="knob-label">Rate</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-wah-depth" data-min="100" data-max="2000" data-val="800">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-wah-depth">800</div>
+                        <div class="knob-label">Depth</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-wah-res" data-min="1" data-max="20" data-val="5">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-wah-res">5.0</div>
+                        <div class="knob-label">Reso</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title">COMPRESSOR</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-comp"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-comp">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-comp-thresh" data-min="-60" data-max="0" data-val="-24">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-comp-thresh">-24</div>
+                        <div class="knob-label">Thresh</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-comp-ratio" data-min="1" data-max="20" data-val="4">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-comp-ratio">4.0</div>
+                        <div class="knob-label">Ratio</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title">DISTORTION</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-dist"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-dist">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-dist-gain" data-min="0" data-max="1" data-val="0.5">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-dist-gain">0.50</div>
+                        <div class="knob-label">Gain</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-dist-tone" data-min="200" data-max="8000" data-val="3000">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-dist-tone">3000</div>
+                        <div class="knob-label">Tone</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-dist-level" data-min="0" data-max="1" data-val="0.5">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-dist-level">0.50</div>
+                        <div class="knob-label">Level</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title" style="color:#ffb74d;">OVERDRIVE</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-od"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-od">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-od-drive" data-min="0" data-max="1" data-val="0.4">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-od-drive">0.40</div>
+                        <div class="knob-label">Drive</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-od-tone" data-min="200" data-max="8000" data-val="2500">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-od-tone">2500</div>
+                        <div class="knob-label">Tone</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-od-level" data-min="0" data-max="1" data-val="0.6">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-od-level">0.60</div>
+                        <div class="knob-label">Level</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title" style="color:#d32f2f;">FUZZ</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-fuzz"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-fuzz">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-fuzz-fuzz" data-min="0" data-max="1" data-val="0.7">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-fuzz-fuzz">0.70</div>
+                        <div class="knob-label">Fuzz</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-fuzz-tone" data-min="200" data-max="8000" data-val="1000">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-fuzz-tone">1000</div>
+                        <div class="knob-label">Tone</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-fuzz-level" data-min="0" data-max="1" data-val="0.3">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-fuzz-level">0.30</div>
+                        <div class="knob-label">Level</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block span-2">
+                <div class="fx-header">
+                    <span class="fx-title">5-BAND GRAPHIC EQ</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-geq"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-geq">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="geq-container">
+                    <div class="slider-wrapper">
+                        <div class="slider-track"><input type="range" class="vertical-slider" id="geq-100" min="-12" max="12" step="0.1" value="0"></div>
+                        <span class="slider-label">100</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <div class="slider-track"><input type="range" class="vertical-slider" id="geq-400" min="-12" max="12" step="0.1" value="0"></div>
+                        <span class="slider-label">400</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <div class="slider-track"><input type="range" class="vertical-slider" id="geq-1k" min="-12" max="12" step="0.1" value="0"></div>
+                        <span class="slider-label">1k</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <div class="slider-track"><input type="range" class="vertical-slider" id="geq-3k" min="-12" max="12" step="0.1" value="0"></div>
+                        <span class="slider-label">3.2k</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <div class="slider-track"><input type="range" class="vertical-slider" id="geq-10k" min="-12" max="12" step="0.1" value="0"></div>
+                        <span class="slider-label">10k</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mfx-grid bottom">
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title" style="color:#64b5f6;">CHORUS</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-cho"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-cho">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-cho-rate" data-min="0.1" data-max="10" data-val="1">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-cho-rate">1.0</div>
+                        <div class="knob-label">Rate</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-cho-depth" data-min="0.001" data-max="0.02" data-val="0.005">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-cho-depth">0.005</div>
+                        <div class="knob-label">Depth</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-cho-mix" data-min="0" data-max="1" data-val="0.5">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-cho-mix">0.50</div>
+                        <div class="knob-label">Mix</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title" style="color:#ba68c8;">FLANGER</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-fla"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-fla">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-fla-rate" data-min="0.1" data-max="10" data-val="0.5">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-fla-rate">0.5</div>
+                        <div class="knob-label">Rate</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-fla-fb" data-min="0" data-max="0.95" data-val="0.7">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-fla-fb">0.70</div>
+                        <div class="knob-label">F.B.</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-fla-mix" data-min="0" data-max="1" data-val="0.5">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-fla-mix">0.50</div>
+                        <div class="knob-label">Mix</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block">
+                <div class="fx-header">
+                    <span class="fx-title" style="color:#4db6ac;">SLICER</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-sli"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-sli">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-sli-rate" data-min="1" data-max="20" data-val="4">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-sli-rate">4.0</div>
+                        <div class="knob-label">Rate</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-sli-depth" data-min="0" data-max="1" data-val="1">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-sli-depth">1.00</div>
+                        <div class="knob-label">Depth</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fx-block span-2" style="grid-column: span 3;">
+                 <div class="fx-header">
+                    <span class="fx-title" style="color:#aed581;">DIGITAL DELAY</span>
+                    <div class="switch-container">
+                        <div class="led" id="led-dly"></div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sw-dly">
+                            <div class="toggle-handle"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="fx-controls" style="justify-content: flex-start; gap: 40px; padding-left: 20px;">
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-dly-time" data-min="0.01" data-max="2.0" data-val="0.3">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-dly-time">0.30</div>
+                        <div class="knob-label">Time (s)</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-dly-fb" data-min="0" data-max="0.95" data-val="0.4">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-dly-fb">0.40</div>
+                        <div class="knob-label">Feedback</div>
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-base" id="knob-dly-mix" data-min="0" data-max="1" data-val="0.3">
+                            <div class="knob-dial"><div class="knob-indicator"></div></div>
+                        </div>
+                        <div class="knob-val-display" id="val-dly-mix">0.30</div>
+                        <div class="knob-label">Mix</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="rack-unit dummy-unit amp">
+        <div class="screw"></div><div class="screw"></div><div class="screw"></div><div class="screw"></div>
+        <div class="dummy-grill"></div>
+        <div style="display:flex; flex-direction:column; align-items:center;">
+             <div class="brand-logo" style="font-size:2rem;">AMP-Z 2000W</div>
+             <div style="color:#777; font-size:0.8rem;">STEREO POWER AMPLIFIER</div>
+        </div>
+        <div class="dummy-grill"></div>
+    </div>
+</div>
+<script>
+class UIKnob {
+    constructor(id, onValueChange) {
+        this.el = document.getElementById(`knob-${id}`);
+        this.valDisplay = document.getElementById(`val-${id}`);
+        this.min = parseFloat(this.el.getAttribute('data-min'));
+        this.max = parseFloat(this.el.getAttribute('data-max'));
+        this.value = parseFloat(this.el.getAttribute('data-val'));
+        this.dial = this.el.querySelector('.knob-dial');
+        this.onValueChange = onValueChange;
+        this.updateVisuals();
+        this.attachEvents();
+    }
+    updateVisuals() {
+        const range = this.max - this.min;
+        const normalized = (this.value - this.min) / range;
+        const deg = -135 + (normalized * 270);
+        this.dial.style.transform = `rotate(${deg}deg)`;
+        let displayStr = this.value.toFixed(2);
+        if(this.max >= 100) displayStr = Math.round(this.value).toString();
+        else if (this.max >= 10) displayStr = this.value.toFixed(1);
+        this.valDisplay.textContent = displayStr;
+    }
+    attachEvents() {
+        let isDragging = false;
+        let startY = 0;
+        let startVal = 0;
+        this.el.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startVal = this.value;
+            document.body.style.cursor = 'ns-resize';
+            e.preventDefault();
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaY = startY - e.clientY;
+            const range = this.max - this.min;
+            const step = range / 200; 
+            let newVal = startVal + (deltaY * step);
+            newVal = Math.max(this.min, Math.min(this.max, newVal));
+            this.value = newVal;
+            this.updateVisuals();
+            if (this.onValueChange) this.onValueChange(this.value);
+        });
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+    }
+}
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let ctx;
+let masterIn, masterOut;
+let sourceNode;
+let audioBuffer;
+class EffectModule {
+    constructor(context) {
+        this.ctx = context;
+        this.input = this.ctx.createGain();
+        this.output = this.ctx.createGain();
+        this.effectInput = this.ctx.createGain();
+        this.effectOutput = this.ctx.createGain();
+        this.isActive = false;
+        this.input.connect(this.output);
+    }
+    toggle(active) {
+        this.isActive = active;
+        this.input.disconnect();
+        if (this.isActive) {
+            this.input.connect(this.effectInput);
+        } else {
+            this.input.connect(this.output);
+        }
+    }
+}
+class NoiseGate extends EffectModule {
+    constructor(context) {
+        super(context);
+        this.threshold = -60; 
+        this.decayTime = 0.1; 
+        this.envelope = 0;
+        this.processor = this.ctx.createScriptProcessor(1024, 1, 1);
+        this.effectInput.connect(this.processor);
+        this.processor.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+        this.dummyGain = this.ctx.createGain();
+        this.dummyGain.gain.value = 0;
+        this.processor.connect(this.dummyGain);
+        this.dummyGain.connect(this.ctx.destination);
+        this.processor.onaudioprocess = (e) => {
+            if (!this.isActive) return;
+            const inputData = e.inputBuffer.getChannelData(0);
+            const outputData = e.outputBuffer.getChannelData(0);
+            const threshLinear = Math.pow(10, this.threshold / 20);
+            const dt = 1.0 / this.ctx.sampleRate;
+            const decayFactor = Math.exp(-dt / this.decayTime);
+            for (let i = 0; i < inputData.length; i++) {
+                const sample = inputData[i];
+                const absSample = Math.abs(sample);
+                if (absSample > this.envelope) {
+                    this.envelope = absSample; 
+                } else {
+                    this.envelope = this.envelope * decayFactor;
+                }
+                const gain = this.envelope > threshLinear ? 1.0 : 0.0;
+                outputData[i] = sample * gain;
+            }
+        };
+    }
+    setThreshold(v) { this.threshold = v; }
+    setDecay(v) { this.decayTime = v; }
+}
+class AutoWah extends EffectModule {
+    constructor(context) {
+        super(context);
+        this.filter = this.ctx.createBiquadFilter();
+        this.filter.type = 'bandpass';
+        this.filter.frequency.value = 300;
+        this.filter.Q.value = 5;
+        this.lfo = this.ctx.createOscillator();
+        this.lfo.type = 'sine';
+        this.lfo.frequency.value = 2;
+        this.depth = this.ctx.createGain();
+        this.depth.gain.value = 800; 
+        this.lfo.connect(this.depth);
+        this.depth.connect(this.filter.frequency);
+        this.lfo.start();
+        this.effectInput.connect(this.filter);
+        this.filter.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    setRate(v) { this.lfo.frequency.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setDepth(v) { this.depth.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setReso(v) { this.filter.Q.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+}
+class Compressor extends EffectModule {
+    constructor(context) {
+        super(context);
+        this.comp = this.ctx.createDynamicsCompressor();
+        this.comp.threshold.value = -24;
+        this.comp.ratio.value = 4;
+        this.comp.attack.value = 0.01;
+        this.comp.release.value = 0.1;
+        this.effectInput.connect(this.comp);
+        this.comp.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    setThreshold(v) { this.comp.threshold.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
+    setRatio(v) { this.comp.ratio.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
+}
+class Drive extends EffectModule {
+    constructor(context, type) {
+        super(context);
+        this.ws = this.ctx.createWaveShaper();
+        this.filter = this.ctx.createBiquadFilter();
+        this.filter.type = 'lowpass';
+        this.filter.frequency.value = 3000;
+        this.level = this.ctx.createGain();
+        this.level.gain.value = 0.5;
+        this.type = type; 
+        this.updateCurve(0.5);
+        this.effectInput.connect(this.ws);
+        this.ws.connect(this.filter);
+        this.filter.connect(this.level);
+        this.level.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    updateCurve(amount) {
+        const k = typeof amount === 'number' ? amount * 100 : 50;
+        const n_samples = 44100;
+        const curve = new Float32Array(n_samples);
+        const deg = Math.PI / 180;
+        for (let i = 0; i < n_samples; ++i) {
+            let x = i * 2 / n_samples - 1;
+            if (this.type === 'od') {
+                curve[i] = (1 + k/10) * x / (1 + (k/10) * Math.abs(x));
+            } else if (this.type === 'dist') {
+                curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+            } else if (this.type === 'fuzz') {
+                const val = x * (k + 1);
+                curve[i] = val > 0 ? Math.tanh(val) : Math.tanh(val * 0.5); 
+            }
+        }
+        this.ws.curve = curve;
+    }
+    setGain(v) { this.updateCurve(v); }
+    setTone(v) { this.filter.frequency.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
+    setLevel(v) { this.level.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
+}
+class GraphicEQ extends EffectModule {
+    constructor(context) {
+        super(context);
+        const freqs = [100, 400, 1000, 3200, 10000];
+        this.filters = [];
+        let prevNode = this.effectInput;
+        freqs.forEach(f => {
+            let filter = this.ctx.createBiquadFilter();
+            filter.type = 'peaking';
+            filter.frequency.value = f;
+            filter.Q.value = 1.414;
+            filter.gain.value = 0;
+            prevNode.connect(filter);
+            prevNode = filter;
+            this.filters.push(filter);
+        });
+        prevNode.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    setGain(index, v) {
+        if(this.filters[index]) {
+            this.filters[index].gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+        }
+    }
+}
+class Modulation extends EffectModule {
+    constructor(context, type) {
+        super(context);
+        this.type = type; 
+        this.dryGain = this.ctx.createGain();
+        this.wetGain = this.ctx.createGain();
+        this.delay = this.ctx.createDelay(1.0);
+        this.lfo = this.ctx.createOscillator();
+        this.lfoGain = this.ctx.createGain();
+        this.feedback = this.ctx.createGain();
+        this.dryGain.gain.value = 0.5;
+        this.wetGain.gain.value = 0.5;
+        this.lfo.type = 'sine';
+        this.feedback.gain.value = 0;
+        if (type === 'chorus') {
+            this.delay.delayTime.value = 0.03; 
+            this.lfo.frequency.value = 1.0;
+            this.lfoGain.gain.value = 0.005; 
+        } else {
+            this.delay.delayTime.value = 0.005; 
+            this.lfo.frequency.value = 0.5;
+            this.lfoGain.gain.value = 0.002;
+            this.feedback.gain.value = 0.7;
+        }
+        this.effectInput.connect(this.dryGain);
+        this.effectInput.connect(this.delay);
+        this.lfo.connect(this.lfoGain);
+        this.lfoGain.connect(this.delay.delayTime);
+        this.lfo.start();
+        this.delay.connect(this.wetGain);
+        this.delay.connect(this.feedback);
+        this.feedback.connect(this.delay);
+        this.dryGain.connect(this.effectOutput);
+        this.wetGain.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    setRate(v) { this.lfo.frequency.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setDepth(v) { this.lfoGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setFeedback(v) { this.feedback.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setMix(v) {
+        this.wetGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+        this.dryGain.gain.setTargetAtTime(1 - v, this.ctx.currentTime, 0.05);
+    }
+}
+class DigitalDelay extends EffectModule {
+    constructor(context) {
+        super(context);
+        this.delay = this.ctx.createDelay(3.0);
+        this.feedback = this.ctx.createGain();
+        this.dry = this.ctx.createGain();
+        this.wet = this.ctx.createGain();
+        this.delay.delayTime.value = 0.3;
+        this.feedback.gain.value = 0.4;
+        this.dry.gain.value = 0.7;
+        this.wet.gain.value = 0.3;
+        this.effectInput.connect(this.dry);
+        this.effectInput.connect(this.delay);
+        this.delay.connect(this.feedback);
+        this.feedback.connect(this.delay);
+        this.delay.connect(this.wet);
+        this.dry.connect(this.effectOutput);
+        this.wet.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    setTime(v) { this.delay.delayTime.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setFeedback(v) { this.feedback.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setMix(v) {
+        this.wet.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+        this.dry.gain.setTargetAtTime(1 - v, this.ctx.currentTime, 0.05);
+    }
+}
+class Slicer extends EffectModule {
+    constructor(context) {
+        super(context);
+        this.ampGain = this.ctx.createGain();
+        this.lfo = this.ctx.createOscillator();
+        this.lfoDepth = this.ctx.createGain();
+        this.ampGain.gain.value = 0.5;
+        this.lfo.type = 'square';
+        this.lfo.frequency.value = 4;
+        this.lfoDepth.gain.value = 0.5; 
+        this.lfo.connect(this.lfoDepth);
+        this.lfoDepth.connect(this.ampGain.gain);
+        this.lfo.start();
+        this.effectInput.connect(this.ampGain);
+        this.ampGain.connect(this.effectOutput);
+        this.effectOutput.connect(this.output);
+    }
+    setRate(v) { this.lfo.frequency.setTargetAtTime(v, this.ctx.currentTime, 0.1); }
+    setDepth(v) { this.lfoDepth.gain.setTargetAtTime(v * 0.5, this.ctx.currentTime, 0.1); }
+}
+let effects = {};
+let isCtxInitialized = false;
+async function initAudioContext() {
+    if (isCtxInitialized) return;
+    ctx = new AudioContext();
+    masterIn = ctx.createGain();
+    masterOut = ctx.createGain();
+    masterOut.connect(ctx.destination);
+    effects = {
+        gate: new NoiseGate(ctx),
+        wah: new AutoWah(ctx),
+        comp: new Compressor(ctx),
+        dist: new Drive(ctx, 'dist'),
+        od: new Drive(ctx, 'od'),
+        fuzz: new Drive(ctx, 'fuzz'),
+        geq: new GraphicEQ(ctx),
+        cho: new Modulation(ctx, 'chorus'),
+        fla: new Modulation(ctx, 'flanger'),
+        sli: new Slicer(ctx),
+        dly: new DigitalDelay(ctx)
+    };
+    masterIn.connect(effects.gate.input);
+    effects.gate.output.connect(effects.wah.input);
+    effects.wah.output.connect(effects.comp.input);
+    effects.comp.output.connect(effects.dist.input);
+    effects.dist.output.connect(effects.od.input);
+    effects.od.output.connect(effects.fuzz.input);
+    effects.fuzz.output.connect(effects.geq.input);
+    effects.geq.output.connect(effects.cho.input);
+    effects.cho.output.connect(effects.fla.input);
+    effects.fla.output.connect(effects.sli.input);
+    effects.sli.output.connect(effects.dly.input);
+    effects.dly.output.connect(masterOut);
+    isCtxInitialized = true;
+}
+function setupUI() {
+    const setupSwitch = (id, effectKey) => {
+        const sw = document.getElementById(`sw-${id}`);
+        const led = document.getElementById(`led-${id}`);
+        sw.addEventListener('change', (e) => {
+            if(!isCtxInitialized) initAudioContext();
+            const isActive = e.target.checked;
+            if(isActive) led.classList.add('active');
+            else led.classList.remove('active');
+            if(effects[effectKey]) effects[effectKey].toggle(isActive);
+        });
+    };
+    setupSwitch('gate', 'gate');
+    setupSwitch('wah', 'wah');
+    setupSwitch('comp', 'comp');
+    setupSwitch('dist', 'dist');
+    setupSwitch('od', 'od');
+    setupSwitch('fuzz', 'fuzz');
+    setupSwitch('geq', 'geq');
+    setupSwitch('cho', 'cho');
+    setupSwitch('fla', 'fla');
+    setupSwitch('sli', 'sli');
+    setupSwitch('dly', 'dly');
+    new UIKnob('gate-thresh', v => effects.gate?.setThreshold(v));
+    new UIKnob('gate-decay', v => effects.gate?.setDecay(v));
+    new UIKnob('wah-rate', v => effects.wah?.setRate(v));
+    new UIKnob('wah-depth', v => effects.wah?.setDepth(v));
+    new UIKnob('wah-res', v => effects.wah?.setReso(v));
+    new UIKnob('comp-thresh', v => effects.comp?.setThreshold(v));
+    new UIKnob('comp-ratio', v => effects.comp?.setRatio(v));
+    new UIKnob('dist-gain', v => effects.dist?.setGain(v));
+    new UIKnob('dist-tone', v => effects.dist?.setTone(v));
+    new UIKnob('dist-level', v => effects.dist?.setLevel(v));
+    new UIKnob('od-drive', v => effects.od?.setGain(v));
+    new UIKnob('od-tone', v => effects.od?.setTone(v));
+    new UIKnob('od-level', v => effects.od?.setLevel(v));
+    new UIKnob('fuzz-fuzz', v => effects.fuzz?.setGain(v));
+    new UIKnob('fuzz-tone', v => effects.fuzz?.setTone(v));
+    new UIKnob('fuzz-level', v => effects.fuzz?.setLevel(v));
+    new UIKnob('cho-rate', v => effects.cho?.setRate(v));
+    new UIKnob('cho-depth', v => effects.cho?.setDepth(v));
+    new UIKnob('cho-mix', v => effects.cho?.setMix(v));
+    new UIKnob('fla-rate', v => effects.fla?.setRate(v));
+    new UIKnob('fla-fb', v => effects.fla?.setFeedback(v));
+    new UIKnob('fla-mix', v => effects.fla?.setMix(v));
+    new UIKnob('sli-rate', v => effects.sli?.setRate(v));
+    new UIKnob('sli-depth', v => effects.sli?.setDepth(v));
+    new UIKnob('dly-time', v => effects.dly?.setTime(v));
+    new UIKnob('dly-fb', v => effects.dly?.setFeedback(v));
+    new UIKnob('dly-mix', v => effects.dly?.setMix(v));
+    const geqIds = ['100', '400', '1k', '3k', '10k'];
+    geqIds.forEach((id, index) => {
+        const slider = document.getElementById(`geq-${id}`);
+        slider.addEventListener('input', (e) => {
+            if(effects.geq) effects.geq.setGain(index, parseFloat(e.target.value));
+        });
+    });
+    const fileInput = document.getElementById('audio-file');
+    const fileNameDisplay = document.getElementById('file-name');
+    const overlay = document.getElementById('status-overlay');
+    const statusText = document.getElementById('status-text');
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        fileNameDisplay.textContent = file.name;
+        overlay.style.display = 'flex';
+        statusText.textContent = '音声ファイルを解析中...';
+        try {
+            if (!isCtxInitialized) await initAudioContext();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+            statusText.textContent = '完了';
+            setTimeout(() => { overlay.style.display = 'none'; }, 500);
+        } catch (err) {
+            console.error(err);
+            statusText.textContent = 'エラー: ファイルを読み込めません';
+            setTimeout(() => { overlay.style.display = 'none'; }, 2000);
+        }
+    });
+    document.getElementById('play-btn').addEventListener('click', async () => {
+        if (!audioBuffer) {
+            alert('先に音声ファイル(MP3, WAV等)をロードしてください。');
+            return;
+        }
+        if (ctx.state === 'suspended') await ctx.resume();
+        if (sourceNode) {
+            sourceNode.stop();
+            sourceNode.disconnect();
+        }
+        sourceNode = ctx.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+        sourceNode.loop = true;
+        sourceNode.connect(masterIn);
+        sourceNode.start();
+    });
+    document.getElementById('stop-btn').addEventListener('click', () => {
+        if (sourceNode) {
+            sourceNode.stop();
+            sourceNode.disconnect();
+            sourceNode = null;
+        }
+    });
+}
+window.addEventListener('DOMContentLoaded', setupUI);
+</script>
+</body>
+</html>
